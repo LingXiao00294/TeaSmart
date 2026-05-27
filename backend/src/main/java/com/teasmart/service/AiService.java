@@ -11,8 +11,12 @@ import com.teasmart.vo.RecommendVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.client.RestClient;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -75,12 +79,83 @@ public class AiService {
         }
     }
 
+    public SseEmitter chat(String message) {
+        SseEmitter emitter = new SseEmitter(60000L);
+
+        if (!aiConfig.isAvailable()) {
+            try {
+                emitter.send(SseEmitter.event().data("AI 功能暂未配置 API Key，无法使用聊天功能。"));
+                emitter.send(SseEmitter.event().data("[DONE]"));
+                emitter.complete();
+            } catch (Exception e) {
+                emitter.completeWithError(e);
+            }
+            return emitter;
+        }
+
+        new Thread(() -> {
+            try {
+                Map<String, Object> body = Map.of(
+                        "model", aiConfig.getModel(),
+                        "max_tokens", aiConfig.getMaxTokens(),
+                        "stream", true,
+                        "messages", List.of(
+                                Map.of("role", "system", "content",
+                                        "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。"),
+                                Map.of("role", "user", "content", message)));
+
+                var response = restClient.post()
+                        .uri(aiConfig.getBaseUrl() + "/chat/completions")
+                        .header("Authorization", "Bearer " + aiConfig.getApiKey())
+                        .header("Content-Type", "application/json")
+                        .header("Accept", "text/event-stream")
+                        .body(body)
+                        .retrieve()
+                        .toEntity(org.springframework.core.io.Resource.class);
+
+                try (var reader = new BufferedReader(
+                        new InputStreamReader(response.getBody().getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("data: ")) {
+                            String data = line.substring(6).trim();
+                            if ("[DONE]".equals(data)) {
+                                emitter.send(SseEmitter.event().data("[DONE]"));
+                                break;
+                            }
+                            try {
+                                JsonNode root = objectMapper.readTree(data);
+                                String content = root.path("choices").path(0)
+                                        .path("delta").path("content").asText("");
+                                if (!content.isEmpty()) {
+                                    emitter.send(SseEmitter.event().data(content));
+                                }
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    }
+                }
+                emitter.complete();
+            } catch (Exception e) {
+                log.warn("AI聊天失败: {}", e.getMessage());
+                try {
+                    emitter.send(SseEmitter.event().data("抱歉，AI 服务暂时不可用。"));
+                    emitter.send(SseEmitter.event().data("[DONE]"));
+                    emitter.complete();
+                } catch (Exception ex) {
+                    emitter.completeWithError(ex);
+                }
+            }
+        }).start();
+
+        return emitter;
+    }
+
     private List<RecommendVO> parseRecommendResponse(String response, List<Product> products) {
         try {
             JsonNode root = objectMapper.readTree(response);
             String content = root.path("choices").path(0).path("message").path("content").asText();
 
-            // 尝试提取 JSON（可能被 ```json 包裹）
             String json = content;
             if (content.contains("```")) {
                 int start = content.indexOf("[");

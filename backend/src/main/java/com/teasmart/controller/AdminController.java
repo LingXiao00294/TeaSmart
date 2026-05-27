@@ -10,8 +10,11 @@ import com.teasmart.entity.Banner;
 import com.teasmart.entity.Category;
 import com.teasmart.entity.Order;
 import com.teasmart.entity.Product;
+import com.teasmart.entity.User;
+import com.teasmart.mapper.UserMapper;
 import com.teasmart.service.BannerService;
 import com.teasmart.service.CategoryService;
+import com.teasmart.service.DashboardService;
 import com.teasmart.service.OrderService;
 import com.teasmart.service.ProductService;
 import com.teasmart.vo.OrderVO;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -30,15 +34,28 @@ public class AdminController {
     private final ProductService productService;
     private final OrderService orderService;
     private final BannerService bannerService;
+    private final DashboardService dashboardService;
+    private final UserMapper userMapper;
 
     public AdminController(CategoryService categoryService,
                            ProductService productService,
                            OrderService orderService,
-                           BannerService bannerService) {
+                           BannerService bannerService,
+                           DashboardService dashboardService,
+                           UserMapper userMapper) {
         this.categoryService = categoryService;
         this.productService = productService;
         this.orderService = orderService;
         this.bannerService = bannerService;
+        this.dashboardService = dashboardService;
+        this.userMapper = userMapper;
+    }
+
+    // ========== Dashboard ==========
+
+    @GetMapping("/dashboard/stats")
+    public Result<Map<String, Object>> dashboardStats() {
+        return Result.ok(dashboardService.getStats());
     }
 
     // ========== 上传 ==========
@@ -119,6 +136,18 @@ public class AdminController {
     public Result<OrderVO> updateOrderStatus(@PathVariable Long id,
                                               @RequestBody OrderStatusDTO dto) {
         return Result.ok(orderService.updateStatus(id, dto.getStatus()));
+    }
+
+    // ========== 用户管理 ==========
+
+    @GetMapping("/users")
+    public Result<Page<User>> listUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<User> result = userMapper.selectPage(new Page<>(page, size), null);
+        // 清除密码
+        result.getRecords().forEach(u -> u.setPassword(null));
+        return Result.ok(result);
     }
 
     // ========== 轮播图管理 ==========

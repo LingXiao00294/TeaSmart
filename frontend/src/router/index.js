@@ -10,13 +10,20 @@ const routes = [
   { path: '/orders', component: () => import('@/views/user/Orders.vue') },
   { path: '/orders/:id', component: () => import('@/views/user/OrderDetail.vue') },
   { path: '/profile', component: () => import('@/views/user/Profile.vue') },
-  { path: '/admin', redirect: '/admin/dashboard' },
-  { path: '/admin/dashboard', component: () => import('@/views/admin/Dashboard.vue'), meta: { admin: true } },
-  { path: '/admin/categories', component: () => import('@/views/admin/CategoryManage.vue'), meta: { admin: true } },
-  { path: '/admin/products', component: () => import('@/views/admin/ProductManage.vue'), meta: { admin: true } },
-  { path: '/admin/orders', component: () => import('@/views/admin/OrderManage.vue'), meta: { admin: true } },
-  { path: '/admin/users', component: () => import('@/views/admin/UserManage.vue'), meta: { admin: true } },
-  { path: '/admin/banners', component: () => import('@/views/admin/BannerManage.vue'), meta: { admin: true } },
+  {
+    path: '/admin',
+    component: () => import('@/views/admin/AdminLayout.vue'),
+    meta: { admin: true },
+    redirect: '/admin/dashboard',
+    children: [
+      { path: 'dashboard', component: () => import('@/views/admin/Dashboard.vue') },
+      { path: 'categories', component: () => import('@/views/admin/CategoryManage.vue') },
+      { path: 'products', component: () => import('@/views/admin/ProductManage.vue') },
+      { path: 'orders', component: () => import('@/views/admin/OrderManage.vue') },
+      { path: 'users', component: () => import('@/views/admin/UserManage.vue') },
+      { path: 'banners', component: () => import('@/views/admin/BannerManage.vue') },
+    ],
+  },
 ]
 
 const router = createRouter({

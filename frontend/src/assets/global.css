@@ -1,0 +1,15 @@
+:root {
+  --primary-color: #409eff;
+  --sidebar-bg: #2d3a4b;
+  --sidebar-text: #bfcbd9;
+  --main-bg: #f5f7fa;
+  --border-color: #e4e7ed;
+  --text-primary: #303133;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

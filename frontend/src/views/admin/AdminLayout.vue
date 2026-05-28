@@ -1,8 +1,15 @@
 <template>
   <el-container class="admin-layout">
-    <el-aside width="200px" class="sidebar">
-      <div class="logo">茶小智管理</div>
-      <el-menu :default-active="$route.path" router class="side-menu">
+    <el-aside width="220px" class="sidebar">
+      <div class="logo">TeaSmart Admin</div>
+      <el-menu
+        :default-active="$route.path"
+        router
+        class="side-menu"
+        background-color="#304156"
+        text-color="#bfcbd9"
+        active-text-color="#ffffff"
+      >
         <el-menu-item index="/admin/dashboard">Dashboard</el-menu-item>
         <el-menu-item index="/admin/categories">分类管理</el-menu-item>
         <el-menu-item index="/admin/products">商品管理</el-menu-item>
@@ -14,13 +21,15 @@
     <el-container>
       <el-header class="top-bar">
         <span>管理后台</span>
-        <div>
+        <div class="user-info">
           <router-link to="/">返回前台</router-link>
-          <el-button text @click="handleLogout">退出</el-button>
+          <el-button link @click="handleLogout">退出登录</el-button>
         </div>
       </el-header>
       <el-main class="main-content">
-        <router-view />
+        <div class="content-card">
+          <router-view />
+        </div>
       </el-main>
     </el-container>
   </el-container>
@@ -41,15 +50,23 @@ function handleLogout() {
 
 <style scoped>
 .admin-layout { height: 100vh; }
-.sidebar { background: #304156; overflow-y: auto; }
-.logo { color: #fff; font-size: 18px; font-weight: bold; padding: 16px; text-align: center; }
-.side-menu { border-right: none; background: #304156; }
-.side-menu .el-menu-item { color: #bfcbd9; }
-.side-menu .el-menu-item.is-active { color: #409eff; background: #263445; }
+.sidebar { background: #304156; transition: width 0.3s; }
+.logo {
+  color: #fff; font-size: 20px; font-weight: 600;
+  padding: 20px 16px; text-align: center; letter-spacing: 1px;
+}
+.side-menu { border-right: none; }
+.side-menu .el-menu-item.is-active { background-color: #409eff !important; }
 .top-bar {
   display: flex; justify-content: space-between; align-items: center;
-  background: #fff; border-bottom: 1px solid #eee; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  background: #fff; border-bottom: 1px solid #e4e7ed;
+  padding: 0 20px;
 }
-.top-bar a { margin-right: 16px; color: #409eff; text-decoration: none; }
-.main-content { background: #f0f2f5; }
+.main-content { background: #f5f7fa; padding: 20px; }
+.content-card {
+  background: #fff; padding: 20px; border-radius: 8px;
+  min-height: calc(100vh - 100px); box-shadow: 0 2px 12px 0 rgba(0,0,0,0.05);
+}
+.user-info { display: flex; align-items: center; gap: 15px; }
+.top-bar a { color: #409eff; text-decoration: none; }
 </style>

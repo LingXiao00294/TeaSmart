@@ -70,14 +70,24 @@ async function sendMessage() {
         if (line.startsWith('data:')) {
           const data = line.slice(5).trim()
           if (data === '[DONE]') continue
+          if (!data) continue
           aiContent += data
           messages.value[messages.value.length - 1].content = aiContent
           scrollToBottom()
         }
       }
     }
+
+    // 如果没有收到任何内容，显示提示
+    if (!aiContent) {
+      messages.value[messages.value.length - 1].content = '抱歉，AI 服务暂时不可用。'
+    }
   } catch (e) {
-    messages.value.push({ role: 'ai', content: '抱歉，AI 服务暂时不可用。' })
+    // 只有当前消息为空时才显示错误
+    const lastMsg = messages.value[messages.value.length - 1]
+    if (!lastMsg || lastMsg.role !== 'ai' || !lastMsg.content) {
+      messages.value.push({ role: 'ai', content: '抱歉，AI 服务暂时不可用。' })
+    }
   } finally {
     loading.value = false
     scrollToBottom()

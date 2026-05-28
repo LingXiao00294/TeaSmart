@@ -16,6 +16,7 @@
         <el-menu-item index="/admin/orders">订单管理</el-menu-item>
         <el-menu-item index="/admin/users">用户管理</el-menu-item>
         <el-menu-item index="/admin/banners">轮播图管理</el-menu-item>
+        <el-menu-item index="/admin/knowledge">知识库管理</el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

@@ -22,6 +22,7 @@ const routes = [
       { path: 'orders', component: () => import('@/views/admin/OrderManage.vue') },
       { path: 'users', component: () => import('@/views/admin/UserManage.vue') },
       { path: 'banners', component: () => import('@/views/admin/BannerManage.vue') },
+      { path: 'knowledge', component: () => import('@/views/admin/KnowledgeManage.vue') },
     ],
   },
 ]

@@ -30,12 +30,15 @@ public class AiService {
 
     private final AiConfig aiConfig;
     private final ProductMapper productMapper;
+    private final KnowledgeService knowledgeService;
     private final ObjectMapper objectMapper;
     private final OkHttpClient httpClient;
 
-    public AiService(AiConfig aiConfig, ProductMapper productMapper, ObjectMapper objectMapper) {
+    public AiService(AiConfig aiConfig, ProductMapper productMapper,
+                     KnowledgeService knowledgeService, ObjectMapper objectMapper) {
         this.aiConfig = aiConfig;
         this.productMapper = productMapper;
+        this.knowledgeService = knowledgeService;
         this.objectMapper = objectMapper;
         this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -64,11 +67,14 @@ public class AiService {
                     + "格式：[{\"productId\":数字,\"reason\":\"推荐理由\"}]"
                     + "\n注意：productId必须是上面列表中存在的数字，不要编造。";
 
+            String knowledge = knowledgeService.buildKnowledgeContext();
+            String systemPrompt = "你是茶小智饮品推荐助手。" + knowledge;
+
             Map<String, Object> bodyMap = new HashMap<>();
             bodyMap.put("model", aiConfig.getModel());
             bodyMap.put("max_tokens", 2000);
             bodyMap.put("messages", List.of(
-                    Map.of("role", "system", "content", "你是茶小智饮品推荐助手"),
+                    Map.of("role", "system", "content", systemPrompt),
                     Map.of("role", "user", "content", prompt)));
 
             Request request = new Request.Builder()
@@ -106,13 +112,15 @@ public class AiService {
         new Thread(() -> {
             boolean dataSent = false;
             try {
+                String knowledge = knowledgeService.buildKnowledgeContext();
+                String chatSystemPrompt = "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。" + knowledge;
+
                 Map<String, Object> bodyMap = new HashMap<>();
                 bodyMap.put("model", aiConfig.getModel());
                 bodyMap.put("max_tokens", 2000);
                 bodyMap.put("stream", true);
                 bodyMap.put("messages", List.of(
-                        Map.of("role", "system", "content",
-                                "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。"),
+                        Map.of("role", "system", "content", chatSystemPrompt),
                         Map.of("role", "user", "content", message)));
 
                 Request request = new Request.Builder()

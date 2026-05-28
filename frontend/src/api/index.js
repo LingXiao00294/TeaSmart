@@ -44,6 +44,11 @@ export const adminCreateBanner = (data) => request.post('/admin/banners', data)
 export const adminUpdateBanner = (id, data) => request.put(`/admin/banners/${id}`, data)
 export const adminDeleteBanner = (id) => request.delete(`/admin/banners/${id}`)
 
+export const adminGetKnowledge = () => request.get('/admin/knowledge')
+export const adminCreateKnowledge = (data) => request.post('/admin/knowledge', data)
+export const adminUpdateKnowledge = (id, data) => request.put(`/admin/knowledge/${id}`, data)
+export const adminDeleteKnowledge = (id) => request.delete(`/admin/knowledge/${id}`)
+
 export const adminUpload = (file) => {
   const fd = new FormData()
   fd.append('file', file)

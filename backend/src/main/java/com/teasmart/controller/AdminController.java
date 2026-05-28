@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.teasmart.common.Result;
 import com.teasmart.dto.BannerDTO;
 import com.teasmart.dto.CategoryDTO;
+import com.teasmart.dto.KnowledgeDTO;
 import com.teasmart.dto.OrderStatusDTO;
 import com.teasmart.dto.ProductDTO;
 import com.teasmart.entity.Banner;
 import com.teasmart.entity.Category;
+import com.teasmart.entity.Knowledge;
 import com.teasmart.entity.Order;
 import com.teasmart.entity.Product;
 import com.teasmart.entity.User;
@@ -15,6 +17,7 @@ import com.teasmart.mapper.UserMapper;
 import com.teasmart.service.BannerService;
 import com.teasmart.service.CategoryService;
 import com.teasmart.service.DashboardService;
+import com.teasmart.service.KnowledgeService;
 import com.teasmart.service.OrderService;
 import com.teasmart.service.ProductService;
 import com.teasmart.vo.OrderVO;
@@ -35,6 +38,7 @@ public class AdminController {
     private final OrderService orderService;
     private final BannerService bannerService;
     private final DashboardService dashboardService;
+    private final KnowledgeService knowledgeService;
     private final UserMapper userMapper;
 
     public AdminController(CategoryService categoryService,
@@ -42,12 +46,14 @@ public class AdminController {
                            OrderService orderService,
                            BannerService bannerService,
                            DashboardService dashboardService,
+                           KnowledgeService knowledgeService,
                            UserMapper userMapper) {
         this.categoryService = categoryService;
         this.productService = productService;
         this.orderService = orderService;
         this.bannerService = bannerService;
         this.dashboardService = dashboardService;
+        this.knowledgeService = knowledgeService;
         this.userMapper = userMapper;
     }
 
@@ -171,6 +177,30 @@ public class AdminController {
     @DeleteMapping("/banners/{id}")
     public Result<Void> deleteBanner(@PathVariable Long id) {
         bannerService.delete(id);
+        return Result.ok();
+    }
+
+    // ========== 知识库管理 ==========
+
+    @GetMapping("/knowledge")
+    public Result<List<Knowledge>> listKnowledge() {
+        return Result.ok(knowledgeService.listAll());
+    }
+
+    @PostMapping("/knowledge")
+    public Result<Knowledge> createKnowledge(@Valid @RequestBody KnowledgeDTO dto) {
+        return Result.ok(knowledgeService.create(dto));
+    }
+
+    @PutMapping("/knowledge/{id}")
+    public Result<Knowledge> updateKnowledge(@PathVariable Long id,
+                                              @Valid @RequestBody KnowledgeDTO dto) {
+        return Result.ok(knowledgeService.update(id, dto));
+    }
+
+    @DeleteMapping("/knowledge/{id}")
+    public Result<Void> deleteKnowledge(@PathVariable Long id) {
+        knowledgeService.delete(id);
         return Result.ok();
     }
 }

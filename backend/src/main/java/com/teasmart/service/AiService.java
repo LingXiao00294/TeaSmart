@@ -8,33 +8,40 @@ import com.teasmart.config.AiConfig;
 import com.teasmart.entity.Product;
 import com.teasmart.mapper.ProductMapper;
 import com.teasmart.vo.RecommendVO;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.client.RestClient;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
 public class AiService {
 
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
+    private static final MediaType JSON_MEDIA = MediaType.get("application/json; charset=utf-8");
 
     private final AiConfig aiConfig;
     private final ProductMapper productMapper;
     private final ObjectMapper objectMapper;
-    private final RestClient restClient;
+    private final OkHttpClient httpClient;
 
     public AiService(AiConfig aiConfig, ProductMapper productMapper, ObjectMapper objectMapper) {
         this.aiConfig = aiConfig;
         this.productMapper = productMapper;
         this.objectMapper = objectMapper;
-        this.restClient = RestClient.builder().build();
+        this.httpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(30, TimeUnit.SECONDS)
+                .build();
     }
 
     public List<RecommendVO> recommend() {
@@ -57,22 +64,31 @@ public class AiService {
                     + "格式：[{\"productId\":数字,\"reason\":\"推荐理由\"}]"
                     + "\n注意：productId必须是上面列表中存在的数字，不要编造。";
 
-            Map<String, Object> body = Map.of(
-                    "model", aiConfig.getModel(),
-                    "max_tokens", aiConfig.getMaxTokens(),
-                    "messages", List.of(
-                            Map.of("role", "system", "content", "你是茶小智饮品推荐助手"),
-                            Map.of("role", "user", "content", prompt)));
+            Map<String, Object> bodyMap = new HashMap<>();
+            bodyMap.put("model", aiConfig.getModel());
+            bodyMap.put("max_tokens", 2000);
+            bodyMap.put("messages", List.of(
+                    Map.of("role", "system", "content", "你是茶小智饮品推荐助手"),
+                    Map.of("role", "user", "content", prompt)));
 
-            String response = restClient.post()
-                    .uri(aiConfig.getBaseUrl() + "/chat/completions")
-                    .header("Authorization", "Bearer " + aiConfig.getApiKey())
-                    .header("Content-Type", "application/json")
-                    .body(body)
-                    .retrieve()
-                    .body(String.class);
+            Request request = new Request.Builder()
+                    .url(aiConfig.getBaseUrl() + "/chat/completions")
+                    .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
+                    .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
+                    .build();
 
-            return parseRecommendResponse(response, products);
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    log.warn("AI推荐API返回: {}", response.code());
+                    return mockRecommend(products);
+                }
+                String responseBody = response.body().string();
+                if (responseBody.isBlank()) {
+                    log.warn("AI推荐API返回空响应");
+                    return mockRecommend(products);
+                }
+                return parseRecommendResponse(responseBody, products);
+            }
         } catch (Exception e) {
             log.warn("AI推荐失败，使用mock数据: {}", e.getMessage());
             return mockRecommend(products);
@@ -83,67 +99,69 @@ public class AiService {
         SseEmitter emitter = new SseEmitter(60000L);
 
         if (!aiConfig.isAvailable()) {
-            try {
-                emitter.send(SseEmitter.event().data("AI 功能暂未配置 API Key，无法使用聊天功能。"));
-                emitter.send(SseEmitter.event().data("[DONE]"));
-                emitter.complete();
-            } catch (Exception e) {
-                emitter.completeWithError(e);
-            }
+            sendSseAndComplete(emitter, "AI 功能暂未配置 API Key，无法使用聊天功能。");
             return emitter;
         }
 
         new Thread(() -> {
+            boolean dataSent = false;
             try {
-                Map<String, Object> body = Map.of(
-                        "model", aiConfig.getModel(),
-                        "max_tokens", aiConfig.getMaxTokens(),
-                        "stream", true,
-                        "messages", List.of(
-                                Map.of("role", "system", "content",
-                                        "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。"),
-                                Map.of("role", "user", "content", message)));
+                Map<String, Object> bodyMap = new HashMap<>();
+                bodyMap.put("model", aiConfig.getModel());
+                bodyMap.put("max_tokens", 2000);
+                bodyMap.put("stream", true);
+                bodyMap.put("messages", List.of(
+                        Map.of("role", "system", "content",
+                                "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。"),
+                        Map.of("role", "user", "content", message)));
 
-                var response = restClient.post()
-                        .uri(aiConfig.getBaseUrl() + "/chat/completions")
-                        .header("Authorization", "Bearer " + aiConfig.getApiKey())
-                        .header("Content-Type", "application/json")
-                        .header("Accept", "text/event-stream")
-                        .body(body)
-                        .retrieve()
-                        .toEntity(org.springframework.core.io.Resource.class);
+                Request request = new Request.Builder()
+                        .url(aiConfig.getBaseUrl() + "/chat/completions")
+                        .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
+                        .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
+                        .build();
 
-                try (var reader = new BufferedReader(
-                        new InputStreamReader(response.getBody().getInputStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("data: ")) {
-                            String data = line.substring(6).trim();
-                            if ("[DONE]".equals(data)) {
-                                emitter.send(SseEmitter.event().data("[DONE]"));
-                                break;
-                            }
-                            try {
-                                JsonNode root = objectMapper.readTree(data);
-                                String content = root.path("choices").path(0)
-                                        .path("delta").path("content").asText("");
-                                if (!content.isEmpty()) {
-                                    emitter.send(SseEmitter.event().data(content));
+                try (Response response = httpClient.newCall(request).execute()) {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        sendSseAndComplete(emitter, "AI 服务返回错误: " + response.code());
+                        return;
+                    }
+
+                    try (var reader = new BufferedReader(
+                            new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.startsWith("data: ")) {
+                                String data = line.substring(6).trim();
+                                if ("[DONE]".equals(data)) break;
+                                try {
+                                    JsonNode root = objectMapper.readTree(data);
+                                    String content = root.path("choices").path(0)
+                                            .path("delta").path("content").asText("");
+                                    if (!content.isEmpty()) {
+                                        emitter.send(SseEmitter.event().data(content));
+                                        dataSent = true;
+                                    }
+                                } catch (Exception ignored) {
                                 }
-                            } catch (Exception ignored) {
                             }
                         }
                     }
                 }
+                emitter.send(SseEmitter.event().data("[DONE]"));
                 emitter.complete();
             } catch (Exception e) {
                 log.warn("AI聊天失败: {}", e.getMessage());
-                try {
-                    emitter.send(SseEmitter.event().data("抱歉，AI 服务暂时不可用。"));
-                    emitter.send(SseEmitter.event().data("[DONE]"));
-                    emitter.complete();
-                } catch (Exception ex) {
-                    emitter.completeWithError(ex);
+                if (!dataSent) {
+                    try {
+                        emitter.send(SseEmitter.event().data("抱歉，AI 服务暂时不可用。"));
+                        emitter.send(SseEmitter.event().data("[DONE]"));
+                        emitter.complete();
+                    } catch (Exception ex) {
+                        emitter.completeWithError(ex);
+                    }
+                } else {
+                    try { emitter.complete(); } catch (Exception ignored) {}
                 }
             }
         }).start();
@@ -151,10 +169,25 @@ public class AiService {
         return emitter;
     }
 
+    private void sendSseAndComplete(SseEmitter emitter, String message) {
+        try {
+            emitter.send(SseEmitter.event().data(message));
+            emitter.send(SseEmitter.event().data("[DONE]"));
+            emitter.complete();
+        } catch (Exception e) {
+            emitter.completeWithError(e);
+        }
+    }
+
     private List<RecommendVO> parseRecommendResponse(String response, List<Product> products) {
         try {
             JsonNode root = objectMapper.readTree(response);
             String content = root.path("choices").path(0).path("message").path("content").asText();
+
+            if (content.isBlank()) {
+                log.warn("AI推荐content为空，可能是推理模型token不足");
+                return mockRecommend(products);
+            }
 
             String json = content;
             if (content.contains("```")) {

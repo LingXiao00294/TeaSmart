@@ -45,7 +45,7 @@ async function sendMessage() {
   scrollToBottom()
 
   try {
-    const response = await fetch('/api/ai/chat', {
+    const response = await fetch(`${import.meta.env.BASE_URL}api/ai/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

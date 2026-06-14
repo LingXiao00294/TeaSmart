@@ -18,6 +18,10 @@ spring:
     resources:
       add-mappings: true
 
+app:
+  # 部署子路径前缀，用于拼接对外暴露的 URL（如上传文件路径）。后端本身监听根路径，由反向代理剥离该前缀。
+  base-path: ${APP_BASE_PATH:/teasmart}
+
 jwt:
   secret: ${JWT_SECRET:teasmart-default-secret-key-at-least-32-chars-long!!}
   expiration: 86400000  # 24小时

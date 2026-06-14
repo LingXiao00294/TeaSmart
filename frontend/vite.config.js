@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  base: '/teasmart/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -12,13 +13,15 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
+      '/teasmart/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/teasmart/, ''),
       },
-      '/uploads': {
+      '/teasmart/uploads': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/teasmart/, ''),
       },
     },
   },

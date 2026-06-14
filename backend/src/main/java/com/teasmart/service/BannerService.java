@@ -27,6 +27,9 @@ public class BannerService {
     @Value("${upload.dir:uploads}")
     private String uploadDir;
 
+    @Value("${app.base-path:}")
+    private String basePath;
+
     public BannerService(BannerMapper bannerMapper) {
         this.bannerMapper = bannerMapper;
     }
@@ -108,6 +111,15 @@ public class BannerService {
             throw new BusinessException(500, "文件上传失败");
         }
 
-        return "/uploads/" + datePath + "/" + fileName;
+        return urlPrefix(basePath) + "/uploads/" + datePath + "/" + fileName;
+    }
+
+    static String urlPrefix(String basePath) {
+        if (basePath == null) return "";
+        String p = basePath.trim();
+        if (p.isEmpty()) return "";
+        if (!p.startsWith("/")) p = "/" + p;
+        if (p.endsWith("/")) p = p.substring(0, p.length() - 1);
+        return p;
     }
 }

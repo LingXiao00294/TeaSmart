@@ -1,74 +1,94 @@
 <template>
-  <div class="menu-page">
-    <div class="top-bar">
-      <div class="header-nav">
-        <el-button link @click="$router.push('/')"><el-icon><ArrowLeft /></el-icon></el-button>
-        <span class="page-title">菜单</span>
-      </div>
-      <router-link to="/cart">
-        <el-badge :value="cartCount" :hidden="cartCount===0"><el-icon size="20"><ShoppingCart /></el-icon></el-badge>
-      </router-link>
-    </div>
+  <AppShell>
+  <div class="menu">
+    <AppHeader title="茶 · 单" back-to="/" />
 
-    <div class="menu-body">
-      <div class="sidebar">
-        <div v-for="cat in categories" :key="cat.id"
-             :class="['cat-item', { active: activeCat === cat.id }]"
-             @click="selectCategory(cat.id)">
-          {{ cat.name }}
+    <div class="menu__body">
+      <aside class="menu__rail">
+        <div
+          v-for="cat in categories"
+          :key="cat.id"
+          :class="['rail__item', { 'rail__item--active': activeCat === cat.id }]"
+          @click="selectCategory(cat.id)"
+        >
+          <span class="rail__name font-heading">{{ cat.name }}</span>
         </div>
-      </div>
+      </aside>
 
-      <div class="product-list">
-        <div v-for="p in products" :key="p.id" class="product-card" @click="openSpec(p)">
-          <div class="prod-img">{{ p.name[0] }}</div>
-          <div class="prod-info">
-            <div class="prod-name">{{ p.name }}</div>
-            <div class="prod-desc">{{ p.description }}</div>
-            <div class="prod-price">¥{{ p.price }}</div>
+      <div class="menu__list">
+        <article
+          v-for="(p, i) in products"
+          :key="p.id"
+          class="prod rise"
+          :style="{ animationDelay: `${i * 0.04}s` }"
+          @click="openSpec(p)"
+        >
+          <div class="prod__bar"></div>
+          <div class="prod__main">
+            <div class="prod__name font-heading">{{ p.name }}</div>
+            <div v-if="p.description" class="prod__desc">{{ p.description }}</div>
+            <div class="prod__bottom">
+              <span class="price prod__price"><small>¥</small>{{ p.price }}</span>
+            </div>
           </div>
-        </div>
-        <div v-if="!products.length" class="empty">
-          <el-empty description="暂无商品" />
+          <button class="prod__add" @click.stop="openSpec(p)" aria-label="加入购物车">
+            <el-icon :size="18"><Plus /></el-icon>
+          </button>
+        </article>
+
+        <div v-if="!products.length" class="menu__empty">
+          <el-empty description="此类别暂无茶品" />
         </div>
       </div>
     </div>
 
-    <el-drawer v-model="drawerVisible" :title="selectedProduct?.name" direction="btt" size="60%">
-      <div v-if="selectedProduct" class="spec-content">
-        <div class="spec-price">¥{{ totalPrice }}</div>
-        <div v-for="(specs, type) in selectedProduct.specs" :key="type" class="spec-group">
-          <div class="spec-label">{{ specLabels[type] || type }}</div>
+    <el-drawer
+      v-model="drawerVisible"
+      :title="selectedProduct?.name"
+      direction="btt"
+      size="62%"
+      class="spec-drawer"
+    >
+      <div v-if="selectedProduct" class="spec">
+        <div class="spec__price">
+          <span class="price"><small>¥</small>{{ totalPrice }}</span>
+          <span class="spec__unit">/ 杯</span>
+        </div>
+        <div v-for="(specs, type) in selectedProduct.specs" :key="type" class="spec__group">
+          <div class="spec__label font-heading">{{ specLabels[type] || type }}</div>
           <el-radio-group v-model="selectedSpecs[type]">
             <el-radio-button v-for="s in specs" :key="s.id" :value="s.id">
               {{ s.specName }}{{ s.priceDiff > 0 ? ` +¥${s.priceDiff}` : '' }}
             </el-radio-button>
           </el-radio-group>
         </div>
-        <div class="quantity-row">
-          <span>数量</span>
+        <div class="spec__qty">
+          <span class="spec__label font-heading">数量</span>
           <el-input-number v-model="quantity" :min="1" :max="99" />
         </div>
-        <el-button type="primary" size="large" class="add-btn" @click="handleAddToCart">
+        <el-button type="primary" size="large" class="spec__btn" @click="handleAddToCart">
           加入购物车
         </el-button>
       </div>
     </el-drawer>
   </div>
+  </AppShell>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getCategories, getProducts, getProductDetail, addToCart, getCart } from '@/api'
+import { getCategories, getProducts, getProductDetail, addToCart } from '@/api'
+import { refresh as refreshCartCount } from '@/composables/useCartCount'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, ShoppingCart } from '@element-plus/icons-vue'
+import { Plus } from '@element-plus/icons-vue'
+import AppShell from '@/components/AppShell.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
 const categories = ref([])
 const products = ref([])
 const activeCat = ref(null)
-const cartCount = ref(0)
 const drawerVisible = ref(false)
 const selectedProduct = ref(null)
 const selectedSpecs = ref({})
@@ -80,16 +100,15 @@ const totalPrice = computed(() => {
   let price = Number(selectedProduct.value.price)
   for (const [type, specId] of Object.entries(selectedSpecs.value)) {
     const specs = selectedProduct.value.specs[type] || []
-    const spec = specs.find(s => s.id === specId)
+    const spec = specs.find((s) => s.id === specId)
     if (spec) price += Number(spec.priceDiff)
   }
   return price
 })
 
 onMounted(async () => {
-  const [c, cart] = await Promise.allSettled([getCategories(), getCart()])
-  if (c.status === 'fulfilled') categories.value = c.value.data
-  if (cart.status === 'fulfilled') cartCount.value = cart.value.data.length
+  const c = await Promise.allSettled([getCategories()])
+  if (c[0].status === 'fulfilled') categories.value = c[0].value.data
   const initCat = route.query.category
   if (initCat) selectCategory(Number(initCat))
   else if (categories.value.length) selectCategory(categories.value[0].id)
@@ -117,9 +136,9 @@ async function handleAddToCart() {
   const specIds = Object.values(selectedSpecs.value)
   try {
     await addToCart({ productId: selectedProduct.value.id, specIds, quantity: quantity.value })
-    ElMessage.success('已加入购物车')
-    cartCount.value++
+    ElMessage.success('已加入茶盏')
     drawerVisible.value = false
+    refreshCartCount()  // 实时同步底部购物车角标
   } catch (e) {
     ElMessage.error(e.message || '添加失败')
   }
@@ -127,48 +146,188 @@ async function handleAddToCart() {
 </script>
 
 <style scoped>
-.menu-page { display: flex; flex-direction: column; height: 100vh; background: var(--main-bg); }
-.top-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+.menu {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
-.header-nav { display: flex; align-items: center; gap: 8px; }
-.page-title { font-size: 17px; font-weight: 600; color: var(--text-primary); }
-.top-bar a { color: var(--text-primary); }
-.menu-body { display: flex; flex: 1; overflow: hidden; }
-.sidebar {
-  width: 88px; background: #fff; overflow-y: auto; flex-shrink: 0;
-  border-right: 1px solid var(--border-color);
+
+.menu__body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
-.cat-item {
-  padding: 16px 8px; text-align: center; font-size: 13px; cursor: pointer;
-  border-left: 3px solid transparent; transition: all 0.2s; color: #606266;
+
+/* —— 分类导轨 —— */
+.menu__rail {
+  width: 84px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  background: var(--tea-paper);
+  border-right: 1px solid var(--tea-line);
 }
-.cat-item.active {
-  background: var(--main-bg); border-left-color: var(--primary-color);
-  color: var(--primary-color); font-weight: 600;
+.rail__item {
+  position: relative;
+  padding: 18px 6px;
+  text-align: center;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--tea-text-2);
+  transition: background 0.2s, color 0.2s;
 }
-.product-list { flex: 1; overflow-y: auto; padding: 12px; }
-.product-card {
-  display: flex; gap: 14px; background: #fff; border-radius: 12px;
-  padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+.rail__item--active {
+  background: var(--tea-paper-2);
+  color: var(--tea-vermilion);
+  font-weight: 600;
 }
-.product-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-.prod-img {
-  width: 72px; height: 72px; border-radius: 12px;
-  background: linear-gradient(135deg, #409eff, #764ba2);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 22px; flex-shrink: 0;
+.rail__item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  background: var(--tea-vermilion);
+  border-radius: 0 2px 2px 0;
 }
-.prod-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.prod-name { font-weight: 600; font-size: 15px; color: var(--text-primary); }
-.prod-desc { font-size: 12px; color: #909399; margin-top: 4px; }
-.prod-price { color: #f56c6c; font-weight: 700; font-size: 16px; margin-top: 6px; }
-.spec-content { padding: 0 10px; }
-.spec-price { font-size: 28px; color: #f56c6c; font-weight: 700; margin-bottom: 20px; }
-.spec-group { margin-bottom: 16px; }
-.spec-label { font-size: 14px; font-weight: 600; margin-bottom: 10px; color: var(--text-primary); }
-.quantity-row { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
-.add-btn { width: 100%; margin-top: 20px; border-radius: 8px; height: 44px; font-size: 15px; }
+.rail__name {
+  letter-spacing: 2px;
+}
+
+/* —— 茶品卡 —— */
+.menu__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.prod {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius);
+  padding: 14px 14px 14px 18px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.prod:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+.prod__bar {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 3px;
+  background: linear-gradient(var(--tea-amber), var(--tea-gold));
+  border-radius: 0 2px 2px 0;
+  opacity: 0.5;
+}
+.prod__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.prod__name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+  letter-spacing: 1px;
+}
+.prod__desc {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tea-text-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.prod__bottom {
+  margin-top: auto;
+  padding-top: 8px;
+}
+.prod__price {
+  font-size: 19px;
+}
+.prod__price small {
+  font-size: 12px;
+  font-weight: 500;
+}
+.prod__add {
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--tea-vermilion);
+  color: #f7e9c6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1.5px rgba(247, 233, 198, 0.5);
+  transition: transform 0.2s;
+}
+.prod__add:hover {
+  transform: scale(1.08);
+}
+.menu__empty {
+  padding: 40px 0;
+}
+
+/* —— 规格 drawer —— */
+.spec {
+  padding: 4px 6px 0;
+}
+.spec__price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+.spec__price .price {
+  font-size: 34px;
+}
+.spec__price .price small {
+  font-size: 16px;
+}
+.spec__unit {
+  font-size: 13px;
+  color: var(--tea-text-3);
+}
+.spec__group {
+  margin-bottom: 18px;
+}
+.spec__label {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--tea-ink-text);
+  letter-spacing: 2px;
+}
+.spec__qty {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 18px;
+}
+.spec__btn {
+  width: 100%;
+  margin-top: 22px;
+  height: 46px;
+  border-radius: var(--radius);
+  font-family: var(--font-heading);
+  font-size: 15px;
+  letter-spacing: 4px;
+}
 </style>

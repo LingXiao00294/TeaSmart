@@ -1,43 +1,55 @@
 <template>
-  <div class="orders-page">
-    <div class="header-nav">
-      <el-button link @click="$router.push('/')"><el-icon><ArrowLeft /></el-icon> 返回首页</el-button>
-      <span class="page-title">我的订单</span>
+  <AppShell>
+  <div class="orders">
+    <AppHeader title="茶 · 记" back-to="/" />
+
+    <div class="orders__tabs">
+      <el-tabs v-model="activeTab" @tab-change="loadOrders" class="tea-tabs">
+        <el-tab-pane label="全部" name="" />
+        <el-tab-pane label="待支付" name="0" />
+        <el-tab-pane label="已支付" name="1" />
+        <el-tab-pane label="已完成" name="3" />
+        <el-tab-pane label="已取消" name="4" />
+      </el-tabs>
     </div>
 
-    <el-tabs v-model="activeTab" @tab-change="loadOrders" class="tabs">
-      <el-tab-pane label="全部" name="" />
-      <el-tab-pane label="待支付" name="0" />
-      <el-tab-pane label="已支付" name="1" />
-      <el-tab-pane label="已完成" name="3" />
-      <el-tab-pane label="已取消" name="4" />
-    </el-tabs>
+    <div v-if="orders.length" class="orders__list">
+      <article
+        v-for="(o, i) in orders"
+        :key="o.id"
+        class="order rise"
+        :style="{ animationDelay: `${i * 0.05}s` }"
+        @click="$router.push(`/orders/${o.id}`)"
+      >
+        <div class="order__head">
+          <span class="order__no">{{ o.orderNo }}</span>
+          <el-tag :type="statusType(o.status)" size="small" effect="plain" round>{{ o.statusText }}</el-tag>
+        </div>
+        <div v-for="item in o.items" :key="item.productId" class="order__item">
+          <span class="order__item-name font-heading">{{ item.productName }}<small>（{{ item.specInfo }}）</small></span>
+          <span class="order__item-amt">×{{ item.quantity }} <span class="price">{{ item.subtotal }}</span></span>
+        </div>
+        <hr class="gold-line-flat order__sep" />
+        <div class="order__foot">
+          <span class="order__foot-label">合计</span>
+          <span class="price order__total"><small>¥</small>{{ o.totalAmount }}</span>
+        </div>
+      </article>
+    </div>
 
-    <div class="order-list">
-      <div v-for="o in orders" :key="o.id" class="order-card" @click="$router.push(`/orders/${o.id}`)">
-        <div class="order-header">
-          <span class="order-no">{{ o.orderNo }}</span>
-          <el-tag :type="statusType(o.status)" size="small" effect="plain">{{ o.statusText }}</el-tag>
-        </div>
-        <div v-for="item in o.items" :key="item.productId" class="order-item">
-          <span>{{ item.productName }}（{{ item.specInfo }}） x{{ item.quantity }}</span>
-          <span class="item-price">¥{{ item.subtotal }}</span>
-        </div>
-        <div class="order-footer">
-          <span class="order-total">合计：¥{{ o.totalAmount }}</span>
-        </div>
-      </div>
-      <div v-if="!orders.length">
-        <el-empty description="暂无订单" />
-      </div>
+    <div v-else class="orders__empty">
+      <div class="seal seal--lg orders__empty-seal">记</div>
+      <p class="orders__empty-txt font-heading">尚无茶记</p>
     </div>
   </div>
+  </AppShell>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getOrders } from '@/api'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import AppShell from '@/components/AppShell.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const activeTab = ref('')
 const orders = ref([])
@@ -55,20 +67,91 @@ function statusType(s) {
 </script>
 
 <style scoped>
-.orders-page { min-height: 100vh; background: var(--main-bg); }
-.header-nav { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #fff; }
-.page-title { font-weight: 600; color: var(--text-primary); }
-.tabs { padding: 0 16px; background: #fff; }
-.order-list { padding: 12px 16px; }
-.order-card {
-  background: #fff; border-radius: 12px; padding: 16px;
-  margin-bottom: 10px; cursor: pointer; transition: all 0.2s;
+.orders {
+  min-height: 100%;
 }
-.order-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-.order-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.order-no { font-size: 12px; color: #909399; }
-.order-item { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; color: #606266; }
-.item-price { color: var(--text-primary); font-weight: 500; }
-.order-footer { text-align: right; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0; }
-.order-total { font-weight: 700; color: #f56c6c; font-size: 15px; }
+.orders__tabs {
+  padding: 0 8px;
+  background: var(--tea-paper-2);
+  border-bottom: 1px solid var(--tea-line);
+}
+.orders__list {
+  padding: 12px 16px;
+}
+.order {
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.order:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+.order__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.order__no {
+  font-size: 12px;
+  color: var(--tea-text-3);
+  letter-spacing: 1px;
+}
+.order__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 5px 0;
+  color: var(--tea-text-2);
+}
+.order__item-name small {
+  color: var(--tea-text-3);
+  font-size: 11px;
+}
+.order__item-amt .price {
+  color: var(--tea-ink-text);
+  font-size: 13px;
+}
+.order__sep {
+  margin: 10px 0;
+}
+.order__foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: baseline;
+  gap: 6px;
+}
+.order__foot-label {
+  font-size: 12px;
+  color: var(--tea-text-3);
+}
+.order__total {
+  font-size: 17px;
+}
+.order__total small {
+  font-size: 12px;
+}
+
+.orders__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 90px 20px;
+}
+.orders__empty-seal {
+  transform: rotate(-6deg);
+  opacity: 0.8;
+  margin-bottom: 18px;
+}
+.orders__empty-txt {
+  font-size: 14px;
+  color: var(--tea-text-3);
+  letter-spacing: 4px;
+}
 </style>

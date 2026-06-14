@@ -1,0 +1,166 @@
+/* ============================================================
+   茶智 TeaSmart · 新中式茶韵设计令牌
+   - 品牌色 / 文字 / 线 / 圆角 / 阴影 / 字体
+   - Element Plus 主题变量覆盖（让 EP 组件自动继承茶色）
+   - 装饰工具类：宣纸纹理 / 金线 / 印章
+   ============================================================ */
+
+:root {
+  /* —— 品牌色 —— */
+  --tea-ink: #2f5233;        /* 墨绿 / 松烟 · 主色 */
+  --tea-ink-700: #244029;
+  --tea-ink-900: #182819;
+  --tea-amber: #8b5a2b;      /* 茶汤褐 */
+  --tea-amber-100: #e8d9c4;
+  --tea-paper: #f5efe0;      /* 宣纸米 · 底 */
+  --tea-paper-2: #fbf7ee;    /* 浅宣纸 · 卡片 */
+  --tea-paper-3: #ffffff;
+  --tea-vermilion: #c0392b;  /* 朱砂 · 价格 / 危险 / 强调 */
+  --tea-vermilion-700: #a52f23;
+  --tea-gold: #b8956a;       /* 金线 */
+  --tea-jade: #6e8b5a;       /* 竹绿 · 成功 */
+
+  /* —— 文字 —— */
+  --tea-ink-text: #2b2620;   /* 墨字 */
+  --tea-text-2: #6b5d4f;     /* 褐灰 */
+  --tea-text-3: #9a8e7d;     /* 浅褐灰 */
+
+  /* —— 线 / 圆角 / 阴影 —— */
+  --tea-line: #e0d6c2;       /* 宣纸线 */
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow-card: 0 4px 16px rgba(47, 82, 51, 0.06);
+  --shadow-float: 0 10px 32px rgba(43, 38, 32, 0.12);
+
+  /* —— 字体 —— */
+  --font-display: 'Cormorant Garamond', 'Noto Serif SC', 'Songti SC', serif;
+  --font-heading: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-body: 'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* —— Element Plus 主题覆盖 —— */
+  /* 主色（墨绿）全阶，供按钮 hover/active、标签、边框使用 */
+  --el-color-primary: #2f5233;
+  --el-color-primary-light-3: #6d8670;
+  --el-color-primary-light-5: #97a899;
+  --el-color-primary-light-7: #c1cbc2;
+  --el-color-primary-light-8: #d5dcd6;
+  --el-color-primary-light-9: #eaeeeb;
+  --el-color-primary-dark-2: #294229;
+
+  --el-color-danger: #c0392b;
+  --el-color-danger-light-3: #d3746b;
+  --el-color-danger-light-9: #f9ebea;
+  --el-color-success: #6e8b5a;
+  --el-color-success-light-3: #9aae8c;
+  --el-color-success-light-9: #f1f3ef;
+  --el-color-warning: #b8860b;
+  --el-color-warning-light-3: #cdaa54;
+  --el-color-warning-light-9: #f8f3e7;
+  --el-color-info: #9a8e7d;
+
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+  --el-border-color: #e0d6c2;
+  --el-border-color-light: #ece4d2;
+  --el-bg-color: #fbf7ee;
+  --el-bg-color-page: #f5efe0;
+  --el-fill-color-blank: #fbf7ee;
+  --el-text-color-primary: #2b2620;
+  --el-text-color-regular: #6b5d4f;
+  --el-font-family: 'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* —— 向后兼容：旧版变量名映射到茶韵令牌（尚未迁移的管理页仍在引用，避免删变量导致失色）—— */
+  --primary-color: var(--tea-ink);
+  --text-primary: var(--tea-ink-text);
+  --main-bg: var(--tea-paper);
+  --border-color: var(--tea-line);
+  --sidebar-bg: #1e3a28;
+  --sidebar-text: #c7b896;
+}
+
+/* ============================================================
+   装饰工具类
+   ============================================================ */
+
+/* 宣纸纹理：层叠暖色径向渐变 + 细微噪点 */
+.paper-texture {
+  background-color: var(--tea-paper);
+  background-image:
+    radial-gradient(circle at 18% 22%, rgba(184, 149, 106, 0.05) 0, transparent 46%),
+    radial-gradient(circle at 82% 78%, rgba(47, 82, 51, 0.04) 0, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+}
+
+/* 墨绿氛围底（桌面端两侧背景 / 登录页） */
+.ink-texture {
+  background-color: var(--tea-ink-900);
+  background-image:
+    radial-gradient(circle at 25% 15%, rgba(110, 139, 90, 0.18) 0, transparent 55%),
+    radial-gradient(circle at 78% 88%, rgba(139, 90, 43, 0.16) 0, transparent 55%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+/* 细金线分隔 */
+.gold-line {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--tea-gold), transparent);
+  opacity: 0.7;
+}
+.gold-line-flat {
+  height: 1px;
+  border: 0;
+  background: var(--tea-line);
+}
+
+/* 印章：朱砂底 + 宋体白字 + 双线边 + 微旋转 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tea-vermilion);
+  color: #f7e9c6;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px rgba(247, 233, 198, 0.55);
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.15);
+  transform: rotate(-4deg);
+  user-select: none;
+}
+.seal--sm { width: 30px; height: 30px; font-size: 16px; border-radius: 5px; }
+.seal--md { width: 40px; height: 40px; font-size: 22px; }
+.seal--lg { width: 56px; height: 56px; font-size: 30px; border-radius: 8px; }
+
+/* 衬线标题 */
+.font-heading { font-family: var(--font-heading); }
+.font-display { font-family: var(--font-display); font-feature-settings: 'liga' 1; }
+
+/* 朱砂价格 */
+.price {
+  color: var(--tea-vermilion);
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-feature-settings: 'tnum' 1;
+}
+
+/* 入场动画：卡片交错浮现 */
+@keyframes tea-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: tea-rise 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* 减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+}
+
+/* 全局滚动条（茶色细条） */
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-thumb { background: var(--tea-line); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--tea-gold); }

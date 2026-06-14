@@ -1,58 +1,81 @@
 <template>
-  <div class="cart-page">
-    <div class="header-nav">
-      <el-button link @click="$router.push('/')"><el-icon><ArrowLeft /></el-icon> 返回首页</el-button>
-      <span class="page-title">购物车</span>
-    </div>
+  <AppShell>
+  <div class="cart">
+    <AppHeader title="茶 · 盏" back-to="/" />
 
-    <div v-if="items.length" class="cart-list">
-      <div v-for="item in items" :key="item.id" class="cart-item">
-        <div class="item-img">{{ item.productName?.[0] || '?' }}</div>
-        <div class="item-info">
-          <div class="item-name">{{ item.productName }}</div>
-          <div class="item-spec">{{ item.specInfo }}</div>
-          <div class="item-bottom">
-            <span class="item-price">¥{{ item.unitPrice }}</span>
-            <el-input-number :model-value="item.quantity" :min="1" size="small"
-              @change="(val) => handleUpdate(item.id, val)" />
-            <el-button type="danger" link size="small" @click="handleDelete(item.id)">删除</el-button>
+    <div v-if="items.length" class="cart__list">
+      <div
+        v-for="(item, i) in items"
+        :key="item.id"
+        class="cart-item rise"
+        :style="{ animationDelay: `${i * 0.04}s` }"
+      >
+        <div class="cart-item__disc">{{ teaGlyph(item.productName) }}</div>
+        <div class="cart-item__info">
+          <div class="cart-item__name font-heading">{{ item.productName }}</div>
+          <div class="cart-item__spec">{{ item.specInfo }}</div>
+          <div class="cart-item__bottom">
+            <span class="price cart-item__price"><small>¥</small>{{ item.unitPrice }}</span>
+            <div class="cart-item__ops">
+              <el-input-number
+                :model-value="item.quantity"
+                :min="1"
+                size="small"
+                @change="(val) => handleUpdate(item.id, val)"
+              />
+              <el-button type="danger" link size="small" @click="handleDelete(item.id)">移除</el-button>
+            </div>
           </div>
         </div>
       </div>
-
-      <div class="cart-footer">
-        <div class="total">合计：<span class="total-price">¥{{ totalPrice }}</span></div>
-        <el-button type="primary" size="large" class="checkout-btn" @click="showCheckout = true">去结算</el-button>
-      </div>
     </div>
 
-    <div v-else class="empty">
-      <el-empty description="购物车空空如也">
-        <el-button type="primary" @click="$router.push('/menu')">去选购</el-button>
-      </el-empty>
+    <div v-else class="cart__empty">
+      <div class="cart__empty-seal seal seal--lg">空</div>
+      <p class="cart__empty-txt font-heading">茶盏尚空</p>
+      <el-button type="primary" class="cart__empty-btn" @click="$router.push('/menu')">去 · 点茶</el-button>
     </div>
 
-    <el-dialog v-model="showCheckout" title="确认订单" width="90%" :close-on-click-modal="false">
-      <div v-for="item in items" :key="item.id" class="checkout-item">
-        <span>{{ item.productName }}（{{ item.specInfo }}）</span>
-        <span>x{{ item.quantity }} ¥{{ item.subtotal }}</span>
+    <el-dialog v-model="showCheckout" title="确认茶单" width="92%" :close-on-click-modal="false" class="checkout-dialog">
+      <div v-for="item in items" :key="item.id" class="checkout-row">
+        <span class="checkout-row__name font-heading">{{ item.productName }}<small>（{{ item.specInfo }}）</small></span>
+        <span class="checkout-row__amt">×{{ item.quantity }} ¥{{ item.subtotal }}</span>
       </div>
-      <div class="checkout-total">总计：¥{{ totalPrice }}</div>
-      <el-input v-model="remark" placeholder="备注（选填）" style="margin-top:14px" />
+      <hr class="gold-line checkout-divider" />
+      <div class="checkout-total">
+        <span>总计</span>
+        <span class="price"><small>¥</small>{{ totalPrice }}</span>
+      </div>
+      <el-input v-model="remark" placeholder="备注（如：少冰、半糖）" class="checkout-remark" />
       <template #footer>
-        <el-button @click="showCheckout = false">取消</el-button>
-        <el-button type="primary" :loading="ordering" @click="handleOrder">提交订单</el-button>
+        <el-button @click="showCheckout = false">再想想</el-button>
+        <el-button type="primary" :loading="ordering" @click="handleOrder">落 · 单</el-button>
       </template>
     </el-dialog>
   </div>
+
+  <template #footer>
+    <transition name="bar-slide">
+      <div v-if="items.length" class="cart__bar">
+        <div class="cart__bar-total">
+          <span class="cart__bar-label">合计</span>
+          <span class="price cart__bar-amount"><small>¥</small>{{ totalPrice }}</span>
+        </div>
+        <el-button type="primary" size="large" class="cart__checkout" @click="showCheckout = true">去 · 结算</el-button>
+      </div>
+    </transition>
+  </template>
+  </AppShell>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCart, updateCartItem, deleteCartItem, createOrder, payOrder } from '@/api'
+import { refresh as refreshCartCount } from '@/composables/useCartCount'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import AppShell from '@/components/AppShell.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const router = useRouter()
 const items = ref([])
@@ -60,16 +83,22 @@ const showCheckout = ref(false)
 const remark = ref('')
 const ordering = ref(false)
 
+function teaGlyph(name) {
+  const map = { 绿: '🍵', 红: '🫖', 奶: '🧋', 果: '🍹', 茶: '🍃', 花: '🌸' }
+  for (const k of Object.keys(map)) if (name && name.includes(k)) return map[k]
+  return '🍵'
+}
+
 const totalPrice = computed(() =>
   items.value.reduce((sum, i) => sum + Number(i.subtotal || 0), 0).toFixed(2)
 )
 
 onMounted(loadCart)
 
-async function loadCart() { items.value = (await getCart()).data }
+async function loadCart() { items.value = (await getCart()).data; refreshCartCount() }
 async function handleUpdate(id, quantity) { await updateCartItem(id, { quantity }); loadCart() }
 async function handleDelete(id) {
-  await ElMessageBox.confirm('确定删除？', '提示')
+  await ElMessageBox.confirm('确定移除此茶品？', '提示')
   await deleteCartItem(id); loadCart()
 }
 
@@ -78,7 +107,8 @@ async function handleOrder() {
   try {
     const res = await createOrder({ remark: remark.value })
     await payOrder(res.data.id)
-    ElMessage.success('下单成功')
+    refreshCartCount()  // 下单后购物车清空，同步角标
+    ElMessage.success('落单成功')
     showCheckout.value = false
     router.push(`/orders/${res.data.id}`)
   } catch (e) { ElMessage.error(e.message || '下单失败') }
@@ -87,33 +117,172 @@ async function handleOrder() {
 </script>
 
 <style scoped>
-.cart-page { min-height: 100vh; background: var(--main-bg); }
-.header-nav { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #fff; }
-.page-title { font-weight: 600; color: var(--text-primary); }
-.cart-list { padding: 12px 16px; padding-bottom: 80px; }
+.cart {
+  min-height: 100%;
+  padding-bottom: 16px;
+}
+.cart__list {
+  padding: 12px 16px;
+}
 .cart-item {
-  display: flex; gap: 14px; background: #fff; border-radius: 12px;
-  padding: 14px; margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
 }
-.item-img {
-  width: 64px; height: 64px; border-radius: 12px;
-  background: linear-gradient(135deg, #409eff, #764ba2);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; flex-shrink: 0;
+.cart-item__disc {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--tea-paper);
+  border: 1px solid var(--tea-line);
+  box-shadow: inset 0 0 0 4px var(--tea-paper-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
 }
-.item-info { flex: 1; }
-.item-name { font-weight: 600; font-size: 15px; color: var(--text-primary); }
-.item-spec { font-size: 12px; color: #909399; margin: 4px 0 8px; }
-.item-bottom { display: flex; align-items: center; gap: 12px; }
-.item-price { color: #f56c6c; font-weight: 700; font-size: 15px; }
-.cart-footer {
-  position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 12px 20px; box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
-  border-top: 1px solid var(--border-color);
+.cart-item__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
-.total-price { color: #f56c6c; font-size: 22px; font-weight: 700; }
-.checkout-btn { border-radius: 8px; height: 42px; padding: 0 28px; }
-.checkout-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-.checkout-total { text-align: right; font-size: 18px; font-weight: 700; color: #f56c6c; margin-top: 14px; }
+.cart-item__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+  letter-spacing: 1px;
+}
+.cart-item__spec {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: var(--tea-text-3);
+}
+.cart-item__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+.cart-item__price {
+  font-size: 17px;
+}
+.cart-item__price small {
+  font-size: 11px;
+}
+.cart-item__ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 空状态 */
+.cart__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 80px 20px;
+}
+.cart__empty-seal {
+  transform: rotate(-6deg);
+  margin-bottom: 18px;
+  opacity: 0.85;
+}
+.cart__empty-txt {
+  font-size: 15px;
+  color: var(--tea-text-3);
+  letter-spacing: 4px;
+  margin-bottom: 24px;
+}
+.cart__empty-btn {
+  border-radius: var(--radius);
+  height: 42px;
+  padding: 0 28px;
+  font-family: var(--font-heading);
+  letter-spacing: 3px;
+}
+
+/* 结算栏（AppShell footer 插槽，常驻于滚动区与导航栏之间） */
+.cart__bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--tea-ink);
+  color: #f5efe0;
+  box-shadow: 0 -6px 20px rgba(24, 40, 25, 0.2);
+}
+.cart__bar-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.cart__bar-label {
+  font-size: 13px;
+  opacity: 0.8;
+  letter-spacing: 2px;
+}
+.cart__bar-amount {
+  color: #f7e9c6;
+  font-size: 24px;
+}
+.cart__bar-amount small {
+  font-size: 14px;
+}
+.cart__checkout {
+  border-radius: var(--radius);
+  height: 44px;
+  padding: 0 26px;
+  font-family: var(--font-heading);
+  letter-spacing: 3px;
+}
+.bar-slide-enter-active,
+.bar-slide-leave-active {
+  transition: transform 0.3s;
+}
+.bar-slide-enter-from,
+.bar-slide-leave-to {
+  transform: translateY(100%);
+}
+
+/* 结算弹窗 */
+.checkout-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--tea-text-2);
+}
+.checkout-row__name small {
+  color: var(--tea-text-3);
+  font-size: 12px;
+}
+.checkout-row__amt {
+  color: var(--tea-ink-text);
+  font-weight: 500;
+}
+.checkout-divider {
+  margin: 10px 0;
+}
+.checkout-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 17px;
+  font-weight: 600;
+}
+.checkout-total .price {
+  font-size: 22px;
+}
+.checkout-remark {
+  margin-top: 16px;
+}
 </style>

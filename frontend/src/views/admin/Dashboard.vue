@@ -1,34 +1,36 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>Dashboard</h2>
+      <h2 class="page-header__title font-heading">营业 · 概览</h2>
+      <p class="page-header__sub">今日茶席，一览无余</p>
     </div>
+
     <el-row :gutter="16">
-      <el-col :span="6" v-for="card in cards" :key="card.label">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-icon" :style="{ background: card.bg }">
+      <el-col :xs="12" :sm="12" :md="6" v-for="card in cards" :key="card.label">
+        <div class="stat-card rise">
+          <div class="stat-card__icon" :style="{ '--c': card.color, '--bg': card.bg }">
             <el-icon :size="24"><component :is="card.icon" /></el-icon>
           </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ card.value }}</div>
-            <div class="stat-label">{{ card.label }}</div>
+          <div class="stat-card__info">
+            <div class="stat-card__value font-display">{{ card.value }}</div>
+            <div class="stat-card__label font-heading">{{ card.label }}</div>
           </div>
-        </el-card>
+        </div>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, shallowRef, markRaw } from 'vue'
+import { ref, onMounted, markRaw } from 'vue'
 import { adminGetDashboard } from '@/api'
 import { ShoppingCart, Money, User, Goods } from '@element-plus/icons-vue'
 
 const cards = ref([
-  { label: '今日订单', value: 0, icon: markRaw(ShoppingCart), bg: 'linear-gradient(135deg, #409eff, #66b1ff)' },
-  { label: '今日销售额', value: '¥0', icon: markRaw(Money), bg: 'linear-gradient(135deg, #67c23a, #85ce61)' },
-  { label: '总用户数', value: 0, icon: markRaw(User), bg: 'linear-gradient(135deg, #e6a23c, #ebb563)' },
-  { label: '总商品数', value: 0, icon: markRaw(Goods), bg: 'linear-gradient(135deg, #f56c6c, #f89898)' },
+  { label: '今日订单', value: 0, icon: markRaw(ShoppingCart), color: '#2f5233', bg: '#e8efe6' },
+  { label: '今日销售额', value: '¥0', icon: markRaw(Money), color: '#8b5a2b', bg: '#efe4d5' },
+  { label: '总用户数', value: 0, icon: markRaw(User), color: '#c0392b', bg: '#f6e3e0' },
+  { label: '总商品数', value: 0, icon: markRaw(Goods), color: '#6e8b5a', bg: '#e9eede' },
 ])
 
 onMounted(async () => {
@@ -43,14 +45,53 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.page-header { margin-bottom: 20px; }
-.page-header h2 { margin: 0; font-size: 20px; font-weight: 600; color: var(--text-primary); }
-.stat-card { border: none; border-radius: 12px; }
-.stat-card :deep(.el-card__body) { display: flex; align-items: center; gap: 16px; padding: 20px; }
-.stat-icon {
-  width: 56px; height: 56px; border-radius: 12px; color: #fff;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+.page-header {
+  margin-bottom: 22px;
 }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
-.stat-label { font-size: 13px; color: #909399; margin-top: 4px; }
+.page-header__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--tea-ink-text);
+  letter-spacing: 3px;
+}
+.page-header__sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--tea-text-3);
+  letter-spacing: 2px;
+}
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.stat-card__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c, var(--tea-ink));
+  background: var(--bg, #e8efe6);
+}
+.stat-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--tea-ink-text);
+  line-height: 1.1;
+}
+.stat-card__label {
+  font-size: 13px;
+  color: var(--tea-text-3);
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
 </style>

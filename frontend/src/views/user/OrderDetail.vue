@@ -1,46 +1,43 @@
 <template>
-  <div class="detail-page">
-    <div class="header-nav">
-      <el-button link @click="$router.push('/orders')"><el-icon><ArrowLeft /></el-icon> 返回订单</el-button>
-      <span class="page-title">订单详情</span>
-    </div>
+  <AppShell>
+  <div class="detail">
+    <AppHeader title="茶 · 详" back-to="/orders" />
 
-    <div v-if="order" class="detail-content">
-      <el-card shadow="never" class="info-card">
-        <div class="status-row">
-          <el-tag :type="statusType(order.status)" size="large" effect="dark">{{ order.statusText }}</el-tag>
-          <span class="order-no">{{ order.orderNo }}</span>
+    <div v-if="order" class="detail__content">
+      <section class="card rise">
+        <div class="detail__status">
+          <el-tag :type="statusType(order.status)" size="large" effect="dark" round>{{ order.statusText }}</el-tag>
+          <span class="detail__no">{{ order.orderNo }}</span>
         </div>
-      </el-card>
+      </section>
 
-      <el-card shadow="never" class="info-card">
-        <div class="card-title">商品明细</div>
+      <section class="card rise" style="animation-delay: 0.05s">
+        <div class="card__title font-heading">茶 · 明细</div>
         <div v-for="item in order.items" :key="item.productId" class="detail-item">
-          <div class="di-info">
-            <div class="di-name">{{ item.productName }}</div>
-            <div class="di-spec">{{ item.specInfo }}</div>
+          <div class="detail-item__main">
+            <div class="detail-item__name font-heading">{{ item.productName }}</div>
+            <div class="detail-item__spec">{{ item.specInfo }}</div>
           </div>
-          <div class="di-right">
-            <span class="di-price">¥{{ item.price }}</span>
-            <span class="di-qty">x{{ item.quantity }}</span>
-            <span class="di-sub">¥{{ item.subtotal }}</span>
+          <div class="detail-item__right">
+            <span class="detail-item__unit">¥{{ item.price }} × {{ item.quantity }}</span>
+            <span class="price detail-item__sub">¥{{ item.subtotal }}</span>
           </div>
         </div>
-      </el-card>
+      </section>
 
-      <el-card shadow="never" class="info-card">
-        <div class="total-row">
-          <span>总计</span>
-          <span class="total-price">¥{{ order.totalAmount }}</span>
-        </div>
-        <div v-if="order.remark" class="remark">备注：{{ order.remark }}</div>
-      </el-card>
+      <section class="card detail__total rise" style="animation-delay: 0.1s">
+        <span class="font-heading detail__total-label">总计</span>
+        <span class="price detail__total-amount"><small>¥</small>{{ order.totalAmount }}</span>
+      </section>
 
-      <div v-if="order.status === 0" class="actions">
-        <el-button type="danger" size="large" class="cancel-btn" @click="handleCancel">取消订单</el-button>
+      <p v-if="order.remark" class="detail__remark">备注：{{ order.remark }}</p>
+
+      <div v-if="order.status === 0" class="detail__actions">
+        <el-button type="danger" plain size="large" class="detail__cancel" @click="handleCancel">取消订单</el-button>
       </div>
     </div>
   </div>
+  </AppShell>
 </template>
 
 <script setup>
@@ -48,7 +45,8 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrderDetail, cancelOrder } from '@/api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@element-plus/icons-vue'
+import AppShell from '@/components/AppShell.vue'
+import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
 const order = ref(null)
@@ -60,7 +58,7 @@ function statusType(s) {
 }
 
 async function handleCancel() {
-  await ElMessageBox.confirm('确定取消订单？', '提示')
+  await ElMessageBox.confirm('确定取消此单？', '提示')
   await cancelOrder(order.value.id)
   ElMessage.success('已取消')
   order.value = (await getOrderDetail(route.params.id)).data
@@ -68,25 +66,111 @@ async function handleCancel() {
 </script>
 
 <style scoped>
-.detail-page { min-height: 100vh; background: var(--main-bg); }
-.header-nav { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #fff; }
-.page-title { font-weight: 600; color: var(--text-primary); }
-.detail-content { padding: 12px 16px; }
-.info-card { border-radius: 12px; border: none; margin-bottom: 10px; }
-.card-title { font-weight: 600; font-size: 15px; color: var(--text-primary); margin-bottom: 14px; }
-.status-row { display: flex; justify-content: space-between; align-items: center; }
-.order-no { font-size: 12px; color: #909399; }
-.detail-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f5f5f5; }
-.detail-item:last-child { border-bottom: none; }
-.di-name { font-weight: 600; font-size: 14px; color: var(--text-primary); }
-.di-spec { font-size: 12px; color: #909399; margin-top: 2px; }
-.di-right { display: flex; align-items: center; gap: 8px; }
-.di-price { color: #606266; font-size: 13px; }
-.di-qty { color: #909399; font-size: 13px; }
-.di-sub { font-weight: 600; color: var(--text-primary); }
-.total-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: 700; }
-.total-price { color: #f56c6c; }
-.remark { margin-top: 12px; color: #909399; font-size: 13px; }
-.actions { margin-top: 20px; }
-.cancel-btn { width: 100%; border-radius: 8px; }
+.detail {
+  min-height: 100%;
+}
+.detail__content {
+  padding: 12px 16px 24px;
+}
+.card {
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+  letter-spacing: 2px;
+  margin-bottom: 14px;
+  position: relative;
+  padding-left: 10px;
+}
+.card__title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 14px;
+  background: var(--tea-vermilion);
+  border-radius: 2px;
+}
+.detail__status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.detail__no {
+  font-size: 12px;
+  color: var(--tea-text-3);
+  letter-spacing: 1px;
+}
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--tea-line);
+}
+.detail-item:last-of-type {
+  border-bottom: none;
+}
+.detail-item__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+}
+.detail-item__spec {
+  font-size: 12px;
+  color: var(--tea-text-3);
+  margin-top: 3px;
+}
+.detail-item__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.detail-item__unit {
+  font-size: 12px;
+  color: var(--tea-text-3);
+}
+.detail-item__sub {
+  font-size: 15px;
+}
+.detail__total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.detail__total-label {
+  font-size: 14px;
+  color: var(--tea-text-2);
+  letter-spacing: 2px;
+}
+.detail__total-amount {
+  font-size: 26px;
+}
+.detail__total-amount small {
+  font-size: 15px;
+}
+.detail__remark {
+  margin: 4px 4px 0;
+  font-size: 13px;
+  color: var(--tea-text-3);
+}
+.detail__actions {
+  margin-top: 22px;
+}
+.detail__cancel {
+  width: 100%;
+  border-radius: var(--radius);
+  height: 46px;
+  font-family: var(--font-heading);
+  letter-spacing: 3px;
+}
 </style>

@@ -1,11 +1,16 @@
 <template>
-  <div class="login-container">
-    <el-card class="login-card" shadow="hover">
-      <div class="header">
-        <h2>欢迎回来</h2>
-        <p>登录以继续探索美味</p>
+  <div class="auth ink-texture">
+    <div class="auth__card rise">
+      <div class="auth__brand">
+        <div class="seal seal--lg auth__seal">茶</div>
+        <div class="auth__wordmark font-display">TeaSmart</div>
+        <div class="auth__cn font-heading">茶 · 智</div>
       </div>
-      <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleLogin" size="large">
+      <p class="auth__poem">一盏清雅，余韵悠长</p>
+
+      <hr class="gold-line auth__divider" />
+
+      <el-form ref="formRef" :model="form" :rules="rules" @submit.prevent="handleLogin" size="large" class="auth__form">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" :prefix-icon="User" />
         </el-form-item>
@@ -13,13 +18,14 @@
           <el-input v-model="form.password" type="password" placeholder="密码" :prefix-icon="Lock" show-password />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" class="login-btn" :loading="loading" @click="handleLogin">登录</el-button>
+          <el-button type="primary" class="auth__btn" :loading="loading" @click="handleLogin">登 录</el-button>
         </el-form-item>
       </el-form>
-      <div class="links">
-        <router-link to="/register">立即注册</router-link>
+
+      <div class="auth__links">
+        <router-link to="/register">尚未入席 · 立即注册</router-link>
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -59,18 +65,82 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.login-container {
+.auth {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--main-bg);
+  padding: 24px 16px;
 }
-.login-card { width: 380px; padding: 30px; border-radius: 16px; border: none; }
-.header { text-align: center; margin-bottom: 30px; }
-.header h2 { margin: 0 0 10px; font-size: 24px; color: var(--text-primary); }
-.header p { margin: 0; color: #909399; font-size: 14px; }
-.login-btn { width: 100%; border-radius: 8px; font-size: 16px; height: 45px; }
-.links { text-align: center; margin-top: 20px; font-size: 14px; }
-.links a { color: var(--primary-color); text-decoration: none; }
+.auth__card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius-lg);
+  padding: 36px 30px 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  text-align: center;
+  position: relative;
+}
+.auth__card::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--tea-line);
+  border-radius: calc(var(--radius-lg) - 4px);
+  pointer-events: none;
+  opacity: 0.6;
+}
+.auth__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.auth__seal {
+  transform: rotate(-6deg);
+  margin-bottom: 4px;
+}
+.auth__wordmark {
+  font-size: 38px;
+  font-weight: 600;
+  color: var(--tea-ink);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+.auth__cn {
+  font-size: 15px;
+  color: var(--tea-amber);
+  letter-spacing: 8px;
+  padding-left: 8px;
+}
+.auth__poem {
+  margin: 14px 0 0;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--tea-text-3);
+  letter-spacing: 3px;
+}
+.auth__divider {
+  margin: 22px 0 24px;
+}
+.auth__btn {
+  width: 100%;
+  height: 46px;
+  border-radius: var(--radius);
+  font-family: var(--font-heading);
+  font-size: 16px;
+  letter-spacing: 8px;
+  padding-left: 16px;
+}
+.auth__links {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.auth__links a {
+  color: var(--tea-ink);
+  border-bottom: 1px solid var(--tea-gold);
+  padding-bottom: 1px;
+}
 </style>

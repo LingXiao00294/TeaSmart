@@ -1,0 +1,32 @@
+# —— 给前端构建用（context: . 整个仓库根）——
+
+# VCS
+
+.git
+.gitignore
+
+# 依赖与构建产物（不进上下文，也避免触发缓存失效）
+
+**/node_modules
+**/dist
+**/target
+
+# 密钥 / 本地环境（绝不能进镜像）
+
+.env
+.env.*
+!.env.example
+
+# 文档与工具
+
+.claude
+.agent
+CLAUDE.md
+README.md
+
+# IDE / 系统
+
+.idea
+.vscode
+*.iml
+.DS_Store

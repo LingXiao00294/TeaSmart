@@ -1,0 +1,14 @@
+# —— 给后端构建用（context: ./backend）——
+
+# 构建产物
+target/
+
+# IDE / 系统
+.idea/
+.vscode/
+*.iml
+*.log
+.DS_Store
+
+# 本地上传目录（不应进镜像）
+uploads/

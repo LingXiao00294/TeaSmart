@@ -27,10 +27,10 @@ import { adminGetDashboard } from '@/api'
 import { ShoppingCart, Money, User, Goods } from '@element-plus/icons-vue'
 
 const cards = ref([
-  { label: '今日订单', value: 0, icon: markRaw(ShoppingCart), color: '#2f5233', bg: '#e8efe6' },
-  { label: '今日销售额', value: '¥0', icon: markRaw(Money), color: '#8b5a2b', bg: '#efe4d5' },
-  { label: '总用户数', value: 0, icon: markRaw(User), color: '#c0392b', bg: '#f6e3e0' },
-  { label: '总商品数', value: 0, icon: markRaw(Goods), color: '#6e8b5a', bg: '#e9eede' },
+  { label: '今日接单', value: 0, icon: markRaw(ShoppingCart), color: '#2f5233', bg: '#e8efe6' },
+  { label: '今日营收', value: '¥0', icon: markRaw(Money), color: '#8b5a2b', bg: '#efe4d5' },
+  { label: '客户总量', value: 0, icon: markRaw(User), color: '#c0392b', bg: '#f6e3e0' },
+  { label: '在售茶品', value: 0, icon: markRaw(Goods), color: '#6e8b5a', bg: '#e9eede' },
 ])
 
 onMounted(async () => {

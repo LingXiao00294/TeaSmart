@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>知识库管理</h2>
-      <el-button type="primary" @click="openForm()">新增条目</el-button>
+      <h2>茶识管理</h2>
+      <el-button type="primary" @click="openForm()">新增茶识</el-button>
     </div>
 
     <el-table :data="list" stripe>
@@ -30,7 +30,7 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑知识条目' : '新增知识条目'" width="560px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑茶识' : '新增茶识'" width="560px" destroy-on-close>
       <el-form :model="form" label-width="60px">
         <el-form-item label="标题"><el-input v-model="form.title" placeholder="如：品牌介绍、营业时间" /></el-form-item>
         <el-form-item label="分类">
@@ -74,12 +74,12 @@ async function handleSave() {
   form.value.id
     ? await adminUpdateKnowledge(form.value.id, form.value)
     : await adminCreateKnowledge(form.value)
-  ElMessage.success('保存成功'); dialogVisible.value = false; loadData()
+  ElMessage.success('茶识已保存'); dialogVisible.value = false; loadData()
 }
 
 async function handleDelete(id) {
-  await ElMessageBox.confirm('确定删除该知识条目？', '提示', { type: 'warning' })
-  await adminDeleteKnowledge(id); ElMessage.success('已删除'); loadData()
+  await ElMessageBox.confirm('确定移除此茶识？', '提示', { type: 'warning' })
+  await adminDeleteKnowledge(id); ElMessage.success('茶识已移除'); loadData()
 }
 </script>
 

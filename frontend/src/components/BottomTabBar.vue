@@ -32,8 +32,8 @@ const { count, refresh } = useCartCount()
 const tabs = [
   { path: '/', label: '首页', icon: markRaw(HomeFilled) },
   { path: '/menu', label: '茶单', icon: markRaw(Coffee) },
-  { path: '/cart', label: '购物车', icon: markRaw(ShoppingCart), badge: true },
-  { path: '/orders', label: '订单', icon: markRaw(Tickets) },
+  { path: '/cart', label: '茶盏', icon: markRaw(ShoppingCart), badge: true },
+  { path: '/orders', label: '茶记', icon: markRaw(Tickets) },
   { path: '/profile', label: '我的', icon: markRaw(User) },
 ]
 

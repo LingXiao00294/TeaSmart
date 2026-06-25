@@ -24,7 +24,7 @@
             <div class="msg__bubble">{{ msg.content }}</div>
           </div>
           <div v-if="loading" class="msg msg--ai">
-            <div class="msg__bubble msg__bubble--muted">研墨中…</div>
+            <div class="msg__bubble msg__bubble--muted">烹茶中…</div>
           </div>
         </div>
 
@@ -102,13 +102,13 @@ async function sendMessage() {
 
     // 如果没有收到任何内容，显示提示
     if (!aiContent) {
-      messages.value[messages.value.length - 1].content = '抱歉，AI 服务暂时不可用。'
+      messages.value[messages.value.length - 1].content = '小智暂歇，稍后再来'
     }
   } catch (e) {
     // 只有当前消息为空时才显示错误
     const lastMsg = messages.value[messages.value.length - 1]
     if (!lastMsg || lastMsg.role !== 'ai' || !lastMsg.content) {
-      messages.value.push({ role: 'ai', content: '抱歉，AI 服务暂时不可用。' })
+      messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来' })
     }
   } finally {
     loading.value = false

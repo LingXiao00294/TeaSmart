@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>用户管理</h2>
+      <h2>茶客管理</h2>
     </div>
 
     <el-table :data="list" stripe>
@@ -13,7 +13,7 @@
       <el-table-column prop="role" label="角色" width="100">
         <template #default="{ row }">
           <el-tag :type="row.role === 'ADMIN' ? 'danger' : ''" effect="plain" size="small">
-            {{ row.role === 'ADMIN' ? '管理员' : '普通用户' }}
+            {{ row.role === 'ADMIN' ? '掌柜' : '茶客' }}
           </el-tag>
         </template>
       </el-table-column>

@@ -10,7 +10,7 @@
             <div class="seal seal--md hero__seal">茶</div>
             <div class="hero__titlebox">
               <div class="hero__wordmark font-display">TeaSmart</div>
-              <div class="hero__cn font-heading">茶 智</div>
+              <div class="hero__cn font-heading">茶小智</div>
             </div>
           </div>
         </div>
@@ -53,14 +53,14 @@
     <section class="block rise" style="animation-delay: 0.1s">
       <div class="sec-head">
         <div class="seal seal--sm sec-head__seal">荐</div>
-        <h3 class="sec-head__title font-heading">茶小智 · 为你推荐</h3>
+        <h3 class="sec-head__title font-heading">茶小智 · 荐茶</h3>
       </div>
       <div v-if="recommends.length" class="rec-track">
         <article v-for="r in recommends" :key="r.productId" class="rec" @click="goMenu()">
           <div class="rec__name font-heading">{{ r.name }}</div>
           <hr class="gold-line rec__line" />
           <p class="rec__reason">{{ r.reason }}</p>
-          <span class="rec__go">点一杯 →</span>
+          <span class="rec__go">尝这一盏 →</span>
         </article>
       </div>
       <div v-else class="rec-empty">
@@ -70,7 +70,7 @@
 
     <div class="home__foot">
       <hr class="gold-line" />
-      <p class="home__foot-txt font-heading">— 茶智 TeaSmart —</p>
+      <p class="home__foot-txt font-heading">— 茶小智 TeaSmart —</p>
     </div>
   </div>
   </AppShell>

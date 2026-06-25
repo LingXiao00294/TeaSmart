@@ -77,12 +77,12 @@ async function handleUpload({ file }) {
 
 async function handleSave() {
   form.value.id ? await adminUpdateBanner(form.value.id, form.value) : await adminCreateBanner(form.value)
-  ElMessage.success('保存成功'); dialogVisible.value = false; loadData()
+  ElMessage.success('轮播已保存'); dialogVisible.value = false; loadData()
 }
 
 async function handleDelete(id) {
   await ElMessageBox.confirm('确定删除该轮播图？', '提示', { type: 'warning' })
-  await adminDeleteBanner(id); ElMessage.success('已删除'); loadData()
+  await adminDeleteBanner(id); ElMessage.success('轮播已移除'); loadData()
 }
 </script>
 

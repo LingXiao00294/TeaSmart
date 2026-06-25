@@ -36,7 +36,7 @@
 
     <div class="profile__foot">
       <hr class="gold-line" />
-      <p class="profile__foot-txt font-heading">茶智 TeaSmart</p>
+      <p class="profile__foot-txt font-heading">茶小智 TeaSmart</p>
     </div>
   </div>
   </AppShell>

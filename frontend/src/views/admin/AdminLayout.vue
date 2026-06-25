@@ -18,12 +18,12 @@
         active-text-color="#f7e9c6"
       >
         <el-menu-item index="/admin/dashboard"><el-icon><DataLine /></el-icon><span>营业概览</span></el-menu-item>
-        <el-menu-item index="/admin/categories"><el-icon><Files /></el-icon><span>分类管理</span></el-menu-item>
-        <el-menu-item index="/admin/products"><el-icon><Goods /></el-icon><span>商品管理</span></el-menu-item>
+        <el-menu-item index="/admin/categories"><el-icon><Files /></el-icon><span>茶品分类</span></el-menu-item>
+        <el-menu-item index="/admin/products"><el-icon><Goods /></el-icon><span>茶品管理</span></el-menu-item>
         <el-menu-item index="/admin/orders"><el-icon><Tickets /></el-icon><span>订单管理</span></el-menu-item>
-        <el-menu-item index="/admin/users"><el-icon><User /></el-icon><span>用户管理</span></el-menu-item>
+        <el-menu-item index="/admin/users"><el-icon><User /></el-icon><span>茶客管理</span></el-menu-item>
         <el-menu-item index="/admin/banners"><el-icon><Picture /></el-icon><span>轮播图管理</span></el-menu-item>
-        <el-menu-item index="/admin/knowledge"><el-icon><Reading /></el-icon><span>知识库管理</span></el-menu-item>
+        <el-menu-item index="/admin/knowledge"><el-icon><Reading /></el-icon><span>茶识管理</span></el-menu-item>
       </el-menu>
     </el-aside>
     <el-container>

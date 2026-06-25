@@ -1,20 +1,20 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>商品管理</h2>
-      <el-button type="primary" @click="openForm()">新增商品</el-button>
+      <h2>茶品管理</h2>
+      <el-button type="primary" @click="openForm()">新增茶品</el-button>
     </div>
 
     <div class="filter-bar">
       <el-select v-model="query.categoryId" clearable placeholder="按分类筛选" @change="loadData" style="width:150px">
         <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
       </el-select>
-      <el-input v-model="query.keyword" placeholder="搜索商品名" clearable @keyup.enter="loadData" style="width:220px" />
+      <el-input v-model="query.keyword" placeholder="搜索茶品名" clearable @keyup.enter="loadData" style="width:220px" />
     </div>
 
     <el-table :data="list" stripe>
       <el-table-column prop="id" label="ID" width="60" />
-      <el-table-column prop="name" label="商品名" />
+      <el-table-column prop="name" label="茶品名" />
       <el-table-column prop="price" label="价格" width="100">
         <template #default="{ row }">¥{{ row.price }}</template>
       </el-table-column>
@@ -38,16 +38,16 @@
         v-model:current-page="query.page" @current-change="loadData" layout="prev, pager, next" />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑商品' : '新增商品'" width="620px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑茶品' : '新增茶品'" width="620px" destroy-on-close>
       <el-form :model="form" label-width="80px">
         <el-form-item label="分类">
           <el-select v-model="form.categoryId" style="width:100%">
             <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
           </el-select>
         </el-form-item>
-        <el-form-item label="名称"><el-input v-model="form.name" placeholder="商品名称" /></el-form-item>
+        <el-form-item label="名称"><el-input v-model="form.name" placeholder="茶品名称" /></el-form-item>
         <el-form-item label="价格"><el-input-number v-model="form.price" :min="0" :precision="2" style="width:100%" /></el-form-item>
-        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" placeholder="商品描述" /></el-form-item>
+        <el-form-item label="描述"><el-input v-model="form.description" type="textarea" :rows="3" placeholder="茶品描述" /></el-form-item>
         <el-form-item label="状态"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="上架" inactive-text="下架" /></el-form-item>
 
         <el-divider content-position="left">规格配置</el-divider>
@@ -115,12 +115,12 @@ async function handleSave() {
   const specs = []
   for (const group of Object.values(specGroups.value)) specs.push(...group.filter(s => s.specName))
   form.value.id ? await adminUpdateProduct(form.value.id, { ...form.value, specs }) : await adminCreateProduct({ ...form.value, specs })
-  ElMessage.success('保存成功'); dialogVisible.value = false; loadData()
+  ElMessage.success('茶品已保存'); dialogVisible.value = false; loadData()
 }
 
 async function handleDelete(id) {
-  await ElMessageBox.confirm('确定删除该商品？', '提示', { type: 'warning' })
-  await adminDeleteProduct(id); ElMessage.success('已删除'); loadData()
+  await ElMessageBox.confirm('确定移除此茶品？', '提示', { type: 'warning' })
+  await adminDeleteProduct(id); ElMessage.success('茶品已移除'); loadData()
 }
 </script>
 

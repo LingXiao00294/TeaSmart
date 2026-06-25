@@ -31,13 +31,13 @@
               <span class="price prod__price"><small>¥</small>{{ p.price }}</span>
             </div>
           </div>
-          <button class="prod__add" @click.stop="openSpec(p)" aria-label="加入购物车">
+          <button class="prod__add" @click.stop="openSpec(p)" aria-label="收入茶盏">
             <el-icon :size="18"><Plus /></el-icon>
           </button>
         </article>
 
         <div v-if="!products.length" class="menu__empty">
-          <el-empty description="此类别暂无茶品" />
+          <el-empty description="此间暂无茶品" />
         </div>
       </div>
     </div>
@@ -67,7 +67,7 @@
           <el-input-number v-model="quantity" :min="1" :max="99" />
         </div>
         <el-button type="primary" size="large" class="spec__btn" @click="handleAddToCart">
-          加入购物车
+          收入茶盏
         </el-button>
       </div>
     </el-drawer>
@@ -136,7 +136,7 @@ async function handleAddToCart() {
   const specIds = Object.values(selectedSpecs.value)
   try {
     await addToCart({ productId: selectedProduct.value.id, specIds, quantity: quantity.value })
-    ElMessage.success('已加入茶盏')
+    ElMessage.success('已收入茶盏')
     drawerVisible.value = false
     refreshCartCount()  // 实时同步底部购物车角标
   } catch (e) {

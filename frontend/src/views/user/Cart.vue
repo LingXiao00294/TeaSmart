@@ -49,7 +49,7 @@
       <el-input v-model="remark" placeholder="备注（如：少冰、半糖）" class="checkout-remark" />
       <template #footer>
         <el-button @click="showCheckout = false">再想想</el-button>
-        <el-button type="primary" :loading="ordering" @click="handleOrder">落 · 单</el-button>
+        <el-button type="primary" :loading="ordering" @click="handleOrder">下 · 单</el-button>
       </template>
     </el-dialog>
   </div>
@@ -61,7 +61,7 @@
           <span class="cart__bar-label">合计</span>
           <span class="price cart__bar-amount"><small>¥</small>{{ totalPrice }}</span>
         </div>
-        <el-button type="primary" size="large" class="cart__checkout" @click="showCheckout = true">去 · 结算</el-button>
+        <el-button type="primary" size="large" class="cart__checkout" @click="showCheckout = true">去 · 结账</el-button>
       </div>
     </transition>
   </template>
@@ -108,7 +108,7 @@ async function handleOrder() {
     const res = await createOrder({ remark: remark.value })
     await payOrder(res.data.id)
     refreshCartCount()  // 下单后购物车清空，同步角标
-    ElMessage.success('落单成功')
+    ElMessage.success('下单成功')
     showCheckout.value = false
     router.push(`/orders/${res.data.id}`)
   } catch (e) { ElMessage.error(e.message || '下单失败') }

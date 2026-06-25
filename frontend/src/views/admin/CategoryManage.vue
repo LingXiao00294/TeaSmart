@@ -1,13 +1,13 @@
 <template>
   <div>
     <div class="page-header">
-      <h2>分类管理</h2>
-      <el-button type="primary" @click="openForm()">新增分类</el-button>
+      <h2>茶品分类</h2>
+      <el-button type="primary" @click="openForm()">新增茶类</el-button>
     </div>
 
     <el-table :data="list" stripe>
       <el-table-column prop="id" label="ID" width="60" />
-      <el-table-column prop="name" label="分类名" />
+      <el-table-column prop="name" label="茶类名" />
       <el-table-column prop="sortOrder" label="排序" width="80" />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
@@ -24,9 +24,9 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑分类' : '新增分类'" width="420px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑茶类' : '新增茶类'" width="420px" destroy-on-close>
       <el-form :model="form" label-width="60px">
-        <el-form-item label="名称"><el-input v-model="form.name" placeholder="请输入分类名称" /></el-form-item>
+        <el-form-item label="名称"><el-input v-model="form.name" placeholder="请输入茶类名称" /></el-form-item>
         <el-form-item label="排序"><el-input-number v-model="form.sortOrder" :min="0" /></el-form-item>
         <el-form-item label="状态"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="启用" inactive-text="禁用" /></el-form-item>
       </el-form>
@@ -57,12 +57,12 @@ function openForm(row) {
 
 async function handleSave() {
   form.value.id ? await adminUpdateCategory(form.value.id, form.value) : await adminCreateCategory(form.value)
-  ElMessage.success('保存成功'); dialogVisible.value = false; loadData()
+  ElMessage.success('茶类已保存'); dialogVisible.value = false; loadData()
 }
 
 async function handleDelete(id) {
-  await ElMessageBox.confirm('确定删除该分类？', '提示', { type: 'warning' })
-  await adminDeleteCategory(id); ElMessage.success('已删除'); loadData()
+  await ElMessageBox.confirm('确定移除此茶类？', '提示', { type: 'warning' })
+  await adminDeleteCategory(id); ElMessage.success('茶类已移除'); loadData()
 }
 </script>
 

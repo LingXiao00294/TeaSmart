@@ -64,13 +64,14 @@ async function handleLogout() {
 <style scoped>
 .profile {
   min-height: 100%;
-  padding-bottom: 24px;
+  padding: 0 16px 24px;
 }
 .profile__hero {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px 20px 30px;
+  margin: 0 -16px;
+  padding: 24px 16px 30px;
   background:
     radial-gradient(circle at 50% 0%, rgba(110, 139, 90, 0.12) 0, transparent 60%),
     var(--tea-paper-2);
@@ -107,7 +108,7 @@ async function handleLogout() {
 }
 
 .profile__card {
-  margin: 16px;
+  margin: 16px 0;
   background: var(--tea-paper-2);
   border: 1px solid var(--tea-line);
   border-radius: var(--radius);
@@ -136,7 +137,7 @@ async function handleLogout() {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 8px 16px 0;
+  padding: 8px 0 0;
 }
 .profile__btn {
   width: 100%;
@@ -144,11 +145,15 @@ async function handleLogout() {
   height: 46px;
   font-family: var(--font-heading);
   letter-spacing: 3px;
+  text-indent: 3px;
+}
+.profile__btn + .profile__btn {
+  margin-left: 0;
 }
 
 .profile__foot {
   text-align: center;
-  margin: 36px 28px 0;
+  margin: 36px 0 0;
 }
 .profile__foot-txt {
   margin-top: 12px;

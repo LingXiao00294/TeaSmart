@@ -35,6 +35,7 @@ import BottomTabBar from './BottomTabBar.vue'
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 /* 桌面端：收束为居中 app 列，两侧露出墨绿氛围底 */

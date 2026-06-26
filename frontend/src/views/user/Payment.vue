@@ -253,6 +253,11 @@ async function handleCancel() {
   height: 46px;
   font-family: var(--font-heading);
   letter-spacing: 3px;
+  text-indent: 3px;
   font-size: 15px;
+}
+/* 覆盖 EP .el-button+.el-button 默认 margin-left，修复垂直堆叠时下方按钮右移与上方错位 */
+.pay__actions .el-button + .el-button {
+  margin-left: 0;
 }
 </style>

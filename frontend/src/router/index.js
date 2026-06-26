@@ -7,6 +7,7 @@ const routes = [
   { path: '/', component: () => import('@/views/user/Home.vue') },
   { path: '/menu', component: () => import('@/views/user/Menu.vue') },
   { path: '/cart', component: () => import('@/views/user/Cart.vue') },
+  { path: '/pay/:id', component: () => import('@/views/user/Payment.vue') },
   { path: '/orders', component: () => import('@/views/user/Orders.vue') },
   { path: '/orders/:id', component: () => import('@/views/user/OrderDetail.vue') },
   { path: '/profile', component: () => import('@/views/user/Profile.vue') },

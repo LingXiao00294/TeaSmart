@@ -31,6 +31,13 @@
         </div>
         <hr class="gold-line-flat order__sep" />
         <div class="order__foot">
+          <el-button
+            v-if="o.status === 0"
+            type="primary"
+            size="small"
+            class="order__pay-btn"
+            @click.stop="$router.push(`/pay/${o.id}`)"
+          >去支付</el-button>
           <span class="order__foot-label">合计</span>
           <span class="price order__total"><small>¥</small>{{ o.totalAmount }}</span>
         </div>
@@ -124,8 +131,14 @@ function statusType(s) {
 .order__foot {
   display: flex;
   justify-content: flex-end;
-  align-items: baseline;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+}
+.order__pay-btn {
+  margin-right: auto;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-heading);
+  letter-spacing: 2px;
 }
 .order__foot-label {
   font-size: 12px;

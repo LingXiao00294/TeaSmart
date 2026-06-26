@@ -71,7 +71,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCart, updateCartItem, deleteCartItem, createOrder, payOrder } from '@/api'
+import { getCart, updateCartItem, deleteCartItem, createOrder } from '@/api'
 import { refresh as refreshCartCount } from '@/composables/useCartCount'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import AppShell from '@/components/AppShell.vue'
@@ -106,11 +106,10 @@ async function handleOrder() {
   ordering.value = true
   try {
     const res = await createOrder({ remark: remark.value })
-    await payOrder(res.data.id)
-    refreshCartCount()  // 下单后购物车清空，同步角标
-    ElMessage.success('下单成功')
+    refreshCartCount()
+    ElMessage.success('订单已创建，请完成支付')
     showCheckout.value = false
-    router.push(`/orders/${res.data.id}`)
+    router.push(`/pay/${res.data.id}`)
   } catch (e) { ElMessage.error(e.message || '下单失败') }
   finally { ordering.value = false }
 }

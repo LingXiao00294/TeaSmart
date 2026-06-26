@@ -33,7 +33,8 @@
       <p v-if="order.remark" class="detail__remark">备注：{{ order.remark }}</p>
 
       <div v-if="order.status === 0" class="detail__actions">
-        <el-button type="danger" plain size="large" class="detail__cancel" @click="handleCancel">取消订单</el-button>
+        <el-button type="primary" size="large" class="detail__pay" @click="$router.push(`/pay/${order.id}`)">去 · 支付</el-button>
+        <el-button type="danger" plain size="large" class="detail__cancel" :loading="cancelling" @click="handleCancel">取消订单</el-button>
       </div>
     </div>
   </div>
@@ -50,6 +51,7 @@ import AppHeader from '@/components/AppHeader.vue'
 
 const route = useRoute()
 const order = ref(null)
+const cancelling = ref(false)
 
 onMounted(async () => { order.value = (await getOrderDetail(route.params.id)).data })
 
@@ -58,10 +60,21 @@ function statusType(s) {
 }
 
 async function handleCancel() {
-  await ElMessageBox.confirm('确定取消此单？', '提示')
-  await cancelOrder(order.value.id)
-  ElMessage.success('已取消')
-  order.value = (await getOrderDetail(route.params.id)).data
+  try {
+    await ElMessageBox.confirm('确定取消此单？', '提示')
+  } catch {
+    return
+  }
+  cancelling.value = true
+  try {
+    await cancelOrder(order.value.id)
+    ElMessage.success('已取消')
+    order.value = (await getOrderDetail(route.params.id)).data
+  } catch (e) {
+    ElMessage.error(e.message || '取消失败')
+  } finally {
+    cancelling.value = false
+  }
 }
 </script>
 
@@ -165,7 +178,11 @@ async function handleCancel() {
 }
 .detail__actions {
   margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
+.detail__pay,
 .detail__cancel {
   width: 100%;
   border-radius: var(--radius);

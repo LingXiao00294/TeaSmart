@@ -44,11 +44,20 @@
 
     <el-drawer
       v-model="drawerVisible"
-      :title="selectedProduct?.name"
       direction="btt"
       size="62%"
-      class="spec-drawer"
+      class="tea-drawer"
+      modal-class="tea-overlay"
+      :with-header="false"
     >
+      <div class="tdr-top"><span class="tdr-grab"></span></div>
+      <div class="tdr-head">
+        <span class="tdr-title font-heading">{{ selectedProduct?.name }}</span>
+        <button class="tdr-close" type="button" aria-label="关闭" @click="drawerVisible = false">
+          <el-icon :size="20"><Close /></el-icon>
+        </button>
+      </div>
+      <hr class="gold-line tdr-line" />
       <div v-if="selectedProduct" class="spec">
         <div class="spec__price">
           <span class="price"><small>¥</small>{{ totalPrice }}</span>
@@ -81,7 +90,7 @@ import { useRoute } from 'vue-router'
 import { getCategories, getProducts, getProductDetail, addToCart } from '@/api'
 import { refresh as refreshCartCount } from '@/composables/useCartCount'
 import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Close } from '@element-plus/icons-vue'
 import AppShell from '@/components/AppShell.vue'
 import AppHeader from '@/components/AppHeader.vue'
 
@@ -287,7 +296,7 @@ async function handleAddToCart() {
 
 /* —— 规格 drawer —— */
 .spec {
-  padding: 4px 6px 0;
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
 }
 .spec__price {
   display: flex;
@@ -329,5 +338,50 @@ async function handleAddToCart() {
   font-family: var(--font-heading);
   font-size: 15px;
   letter-spacing: 4px;
+}
+
+/* —— 规格 drawer 自绘顶部（抓手 + 标题 + 关闭 + 金线）—— */
+.tdr-top {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px;
+}
+.tdr-grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tea-line);
+}
+.tdr-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 20px 12px;
+}
+.tdr-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+  letter-spacing: 2px;
+}
+.tdr-close {
+  border: 0;
+  background: transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--tea-text-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.tdr-close:hover {
+  background: var(--tea-paper);
+  color: var(--tea-vermilion);
+}
+.tdr-line {
+  margin: 0 20px 4px;
 }
 </style>

@@ -30,3 +30,87 @@ h1, h2, h3, h4 {
   font-weight: 600;
   margin: 0;
 }
+
+/* ============================================================
+   茶韵弹窗（dialog / drawer）
+   - 仅对挂了 .tea-dialog / .tea-drawer 的弹窗生效，不影响管理员端默认弹窗
+   - 桌面端约束宽度并居中，避免占满整屏；宣纸底 + 墨绿头 + 金线
+   ============================================================ */
+
+/* —— 遮罩：墨绿半透明（替代纯黑，与桌面两侧墨绿氛围底呼应）—— */
+.el-overlay.tea-overlay {
+  background-color: rgba(24, 40, 25, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* —— 居中弹窗（确认茶单等）：桌面端收口到主容器宽度，居中浮层 —— */
+.el-dialog.tea-dialog {
+  width: min(92vw, 460px);
+  background: var(--tea-paper-2);
+  border: 1px solid var(--tea-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+/* 标题栏：墨绿头 + 金线底 */
+.tea-dialog .el-dialog__header {
+  margin-right: 0;
+  padding: 16px 20px 14px;
+  background: var(--tea-ink);
+  position: relative;
+}
+.tea-dialog .el-dialog__header::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tea-gold), transparent);
+  opacity: 0.8;
+}
+.tea-dialog .el-dialog__title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: #f5efe0;
+}
+/* 关闭按钮 */
+.tea-dialog .el-dialog__headerbtn {
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  color: rgba(245, 239, 224, 0.8);
+}
+.tea-dialog .el-dialog__headerbtn:hover {
+  color: var(--tea-vermilion);
+}
+/* body / footer */
+.tea-dialog .el-dialog__body {
+  padding: 18px 20px 8px;
+  color: var(--tea-ink-text);
+}
+.tea-dialog .el-dialog__footer {
+  padding: 8px 20px 18px;
+  border-top: 0;
+}
+
+/* —— 底部抽屉（规格选择等）：桌面端宽度跟随主容器并居中，顶部圆角 —— */
+.el-drawer.tea-drawer {
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
+  background: var(--tea-paper-2);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+}
+.tea-drawer .el-drawer__body {
+  padding: 0;
+}

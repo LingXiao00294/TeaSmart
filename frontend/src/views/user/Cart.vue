@@ -38,6 +38,7 @@
 
     <el-dialog
       v-model="showCheckout"
+      title="确认茶单"
       :close-on-click-modal="false"
       class="tea-dialog"
       modal-class="tea-overlay"
@@ -226,8 +227,8 @@ async function handleOrder() {
   gap: 14px;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   background: var(--tea-ink);
-  color: #f5efe0;
-  box-shadow: 0 -6px 20px rgba(24, 40, 25, 0.2);
+  color: var(--tea-paper);
+  box-shadow: 0 -6px 20px color-mix(in srgb, var(--tea-ink-900) 20%, transparent);
 }
 .cart__bar-total {
   display: flex;
@@ -305,7 +306,7 @@ async function handleOrder() {
 .checkout-head__title {
   font-size: 17px;
   letter-spacing: 3px;
-  color: #f5efe0;
+  color: var(--tea-paper);
 }
 .checkout-cancel {
   font-family: var(--font-heading);

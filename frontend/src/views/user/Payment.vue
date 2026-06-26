@@ -32,7 +32,7 @@
 
       <p v-if="order.remark" class="pay__remark">备注：{{ order.remark }}</p>
 
-      <section class="card pay__actions rise" style="animation-delay: 0.15s">
+      <section class="card pay__actions tea-actions rise" style="animation-delay: 0.15s">
         <el-button
           type="primary"
           size="large"
@@ -255,9 +255,5 @@ async function handleCancel() {
   letter-spacing: 3px;
   text-indent: 3px;
   font-size: 15px;
-}
-/* 覆盖 EP .el-button+.el-button 默认 margin-left，修复垂直堆叠时下方按钮右移与上方错位 */
-.pay__actions .el-button + .el-button {
-  margin-left: 0;
 }
 </style>

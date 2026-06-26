@@ -1,8 +1,7 @@
 <template>
   <AppShell>
+  <AppHeader title="我 · 的" back-to="/" />
   <div class="profile">
-    <AppHeader title="我 · 的" back-to="/" class="profile__header" />
-
     <div class="profile__hero rise">
       <div class="seal seal--lg profile__avatar">{{ user?.username?.[0]?.toUpperCase() || '客' }}</div>
       <div class="profile__name font-heading">{{ user?.username || '茶客' }}</div>
@@ -65,10 +64,6 @@ async function handleLogout() {
 .profile {
   min-height: 100%;
   padding: 0 16px 24px;
-}
-/* AppHeader 突破父容器左右 padding，与 .profile__hero 一样满宽，和其他页面一致 */
-.profile__header {
-  margin: 0 -16px;
 }
 .profile__hero {
   display: flex;

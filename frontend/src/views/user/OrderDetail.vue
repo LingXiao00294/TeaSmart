@@ -32,7 +32,7 @@
 
       <p v-if="order.remark" class="detail__remark">备注：{{ order.remark }}</p>
 
-      <div v-if="order.status === 0" class="detail__actions">
+      <div v-if="order.status === 0" class="detail__actions tea-actions">
         <el-button type="primary" size="large" class="detail__pay" @click="$router.push(`/pay/${order.id}`)">去 · 支付</el-button>
         <el-button type="danger" plain size="large" class="detail__cancel" :loading="cancelling" @click="handleCancel">取消订单</el-button>
       </div>
@@ -190,9 +190,5 @@ async function handleCancel() {
   font-family: var(--font-heading);
   letter-spacing: 3px;
   text-indent: 3px;
-}
-/* 覆盖 EP .el-button+.el-button 默认 margin-left，修复垂直堆叠时下方按钮右移与上方错位 */
-.detail__actions .el-button + .el-button {
-  margin-left: 0;
 }
 </style>

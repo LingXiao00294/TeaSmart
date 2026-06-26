@@ -39,7 +39,7 @@ h1, h2, h3, h4 {
 
 /* —— 遮罩：墨绿半透明（替代纯黑，与桌面两侧墨绿氛围底呼应）—— */
 .el-overlay.tea-overlay {
-  background-color: rgba(24, 40, 25, 0.55);
+  background-color: color-mix(in srgb, var(--tea-ink-900) 55%, transparent);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
 }
@@ -75,7 +75,7 @@ h1, h2, h3, h4 {
   font-weight: 600;
   font-size: 17px;
   letter-spacing: 3px;
-  color: #f5efe0;
+  color: var(--tea-paper);
 }
 /* 关闭按钮 */
 .tea-dialog .el-dialog__headerbtn {
@@ -83,7 +83,7 @@ h1, h2, h3, h4 {
   right: 14px;
   width: 28px;
   height: 28px;
-  color: rgba(245, 239, 224, 0.8);
+  color: color-mix(in srgb, var(--tea-paper) 80%, transparent);
 }
 .tea-dialog .el-dialog__headerbtn:hover {
   color: var(--tea-vermilion);
@@ -113,4 +113,39 @@ h1, h2, h3, h4 {
 }
 .tea-drawer .el-drawer__body {
   padding: 0;
+}
+/* 标题栏：宣纸底 + 衬线标题 + 金线底（复用 EP 原生 header，关闭按钮随 EP 钉在 body 之外） */
+.tea-drawer .el-drawer__header {
+  margin: 0;
+  padding: 14px 20px 12px;
+  position: relative;
+}
+.tea-drawer .el-drawer__header::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--tea-gold), transparent);
+  opacity: 0.7;
+}
+.tea-drawer .el-drawer__title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--tea-ink-text);
+  letter-spacing: 2px;
+}
+.tea-drawer .el-drawer__close-btn {
+  color: var(--tea-text-2);
+}
+.tea-drawer .el-drawer__close-btn:hover,
+.tea-drawer .el-drawer__close-btn:hover i {
+  color: var(--tea-vermilion);
+}
+
+/* —— 茶韵垂直按钮组：抵消 EP 相邻按钮默认 margin-left，避免下方按钮右移错位 —— */
+.tea-actions .el-button + .el-button {
+  margin-left: 0;
 }

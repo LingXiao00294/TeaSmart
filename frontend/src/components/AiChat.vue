@@ -27,6 +27,9 @@
             <div class="chat-head__name">茶小智</div>
             <div class="chat-head__sub">为你寻一盏好茶</div>
           </div>
+          <button class="chat-close" @click="visible = false" aria-label="关闭">
+            <el-icon :size="16"><Close /></el-icon>
+          </button>
         </div>
 
         <div class="chat-body" ref="bodyRef">
@@ -220,6 +223,15 @@ async function sendMessage() {
   const text = input.value.trim()
   if (!text || loading.value) return
 
+  // 历史多轮上下文：已有消息转为 user/assistant，截断最近 20 条（与后端 MAX_HISTORY 对齐）
+  const history = messages.value
+    .filter((m) => m.content && m.content.trim())
+    .map((m) => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.content,
+    }))
+    .slice(-20)
+
   messages.value.push({ role: 'user', content: text })
   input.value = ''
   loading.value = true
@@ -233,7 +245,7 @@ async function sendMessage() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${userStore.token}`,
       },
-      body: JSON.stringify({ message: text }),
+      body: JSON.stringify({ message: text, history }),
     })
 
     const reader = response.body.getReader()
@@ -391,6 +403,25 @@ function scrollToBottom() {
   font-size: 11px;
   opacity: 0.7;
   margin-top: 1px;
+}
+.chat-close {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5efe0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.chat-close:hover {
+  background: rgba(255, 255, 255, 0.24);
 }
 
 .chat-body {

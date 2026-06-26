@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.teasmart.config.AiConfig;
+import com.teasmart.dto.ChatRequest;
 import com.teasmart.entity.Product;
 import com.teasmart.mapper.ProductMapper;
 import com.teasmart.vo.RecommendVO;
@@ -27,6 +28,8 @@ public class AiService {
 
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
     private static final MediaType JSON_MEDIA = MediaType.get("application/json; charset=utf-8");
+    /** 多轮对话最多携带的历史消息条数，超出按最近截断，避免 token 超限 */
+    private static final int MAX_HISTORY = 20;
 
     private final AiConfig aiConfig;
     private final ProductMapper productMapper;
@@ -101,7 +104,7 @@ public class AiService {
         }
     }
 
-    public SseEmitter chat(String message) {
+    public SseEmitter chat(String message, List<ChatRequest.ChatMessage> history) {
         SseEmitter emitter = new SseEmitter(60000L);
 
         if (!aiConfig.isAvailable()) {
@@ -119,9 +122,22 @@ public class AiService {
                 bodyMap.put("model", aiConfig.getModel());
                 bodyMap.put("max_tokens", 2000);
                 bodyMap.put("stream", true);
-                bodyMap.put("messages", List.of(
-                        Map.of("role", "system", "content", chatSystemPrompt),
-                        Map.of("role", "user", "content", message)));
+                List<Map<String, String>> messages = new ArrayList<>();
+                messages.add(Map.of("role", "system", "content", chatSystemPrompt));
+                // 追加历史多轮：仅接受 user/assistant，过滤空内容；按最近 MAX_HISTORY 条截断
+                if (history != null) {
+                    int from = Math.max(0, history.size() - MAX_HISTORY);
+                    for (int i = from; i < history.size(); i++) {
+                        ChatRequest.ChatMessage m = history.get(i);
+                        String role = m.getRole();
+                        String content = m.getContent();
+                        if (content == null || content.isBlank()) continue;
+                        if (!"user".equals(role) && !"assistant".equals(role)) continue;
+                        messages.add(Map.of("role", role, "content", content));
+                    }
+                }
+                messages.add(Map.of("role", "user", "content", message));
+                bodyMap.put("messages", messages);
 
                 Request request = new Request.Builder()
                         .url(aiConfig.getBaseUrl() + "/chat/completions")

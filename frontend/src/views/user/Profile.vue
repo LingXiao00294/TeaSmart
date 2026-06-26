@@ -1,8 +1,7 @@
 <template>
   <AppShell>
+  <AppHeader title="我 · 的" back-to="/" />
   <div class="profile">
-    <AppHeader title="我 · 的" back-to="/" />
-
     <div class="profile__hero rise">
       <div class="seal seal--lg profile__avatar">{{ user?.username?.[0]?.toUpperCase() || '客' }}</div>
       <div class="profile__name font-heading">{{ user?.username || '茶客' }}</div>

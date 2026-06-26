@@ -32,7 +32,7 @@
 
       <p v-if="order.remark" class="pay__remark">备注：{{ order.remark }}</p>
 
-      <section class="card pay__actions rise" style="animation-delay: 0.15s">
+      <section class="card pay__actions tea-actions rise" style="animation-delay: 0.15s">
         <el-button
           type="primary"
           size="large"
@@ -253,6 +253,7 @@ async function handleCancel() {
   height: 46px;
   font-family: var(--font-heading);
   letter-spacing: 3px;
+  text-indent: 3px;
   font-size: 15px;
 }
 </style>

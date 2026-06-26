@@ -36,7 +36,19 @@
       <el-button type="primary" class="cart__empty-btn" @click="$router.push('/menu')">去 · 点茶</el-button>
     </div>
 
-    <el-dialog v-model="showCheckout" title="确认茶单" width="92%" :close-on-click-modal="false" class="checkout-dialog">
+    <el-dialog
+      v-model="showCheckout"
+      title="确认茶单"
+      :close-on-click-modal="false"
+      class="tea-dialog"
+      modal-class="tea-overlay"
+    >
+      <template #header>
+        <div class="checkout-head">
+          <span class="seal seal--sm">单</span>
+          <span class="checkout-head__title font-heading">确认茶单</span>
+        </div>
+      </template>
       <div v-for="item in items" :key="item.id" class="checkout-row">
         <span class="checkout-row__name font-heading">{{ item.productName }}<small>（{{ item.specInfo }}）</small></span>
         <span class="checkout-row__amt">×{{ item.quantity }} ¥{{ item.subtotal }}</span>
@@ -48,8 +60,8 @@
       </div>
       <el-input v-model="remark" placeholder="备注（如：少冰、半糖）" class="checkout-remark" />
       <template #footer>
-        <el-button @click="showCheckout = false">再想想</el-button>
-        <el-button type="primary" :loading="ordering" @click="handleOrder">下 · 单</el-button>
+        <el-button class="checkout-cancel" @click="showCheckout = false">再想想</el-button>
+        <el-button type="primary" :loading="ordering" class="checkout-submit" @click="handleOrder">下 · 单</el-button>
       </template>
     </el-dialog>
   </div>
@@ -215,8 +227,9 @@ async function handleOrder() {
   gap: 14px;
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   background: var(--tea-ink);
-  color: #f5efe0;
-  box-shadow: 0 -6px 20px rgba(24, 40, 25, 0.2);
+  color: var(--tea-paper);
+  box-shadow: 0 -6px 20px rgba(24, 40, 25, 0.2); /* 降级：不支持 color-mix 的浏览器 */
+  box-shadow: 0 -6px 20px color-mix(in srgb, var(--tea-ink-900) 20%, transparent);
 }
 .cart__bar-total {
   display: flex;
@@ -283,5 +296,27 @@ async function handleOrder() {
 }
 .checkout-remark {
   margin-top: 16px;
+}
+
+/* 茶韵弹窗：标题区（墨绿头内的印章 + 衬线标题）与按钮 */
+.checkout-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.checkout-head__title {
+  font-size: 17px;
+  letter-spacing: 3px;
+  color: var(--tea-paper);
+}
+.checkout-cancel {
+  font-family: var(--font-heading);
+  letter-spacing: 2px;
+  border-radius: var(--radius);
+}
+.checkout-submit {
+  font-family: var(--font-heading);
+  letter-spacing: 3px;
+  border-radius: var(--radius);
 }
 </style>

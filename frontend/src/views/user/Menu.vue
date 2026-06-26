@@ -47,7 +47,8 @@
       :title="selectedProduct?.name"
       direction="btt"
       size="62%"
-      class="spec-drawer"
+      class="tea-drawer"
+      modal-class="tea-overlay"
     >
       <div v-if="selectedProduct" class="spec">
         <div class="spec__price">
@@ -287,7 +288,7 @@ async function handleAddToCart() {
 
 /* —— 规格 drawer —— */
 .spec {
-  padding: 4px 6px 0;
+  padding: 16px 20px calc(20px + env(safe-area-inset-bottom));
 }
 .spec__price {
   display: flex;
@@ -330,4 +331,5 @@ async function handleAddToCart() {
   font-size: 15px;
   letter-spacing: 4px;
 }
+
 </style>

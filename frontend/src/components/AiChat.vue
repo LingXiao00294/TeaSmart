@@ -18,9 +18,14 @@
       </span>
     </button>
 
-    <!-- 聊天窗口 -->
+    <!-- 聊天窗口：transform-origin 跟随贴边侧，弹出方向与窗口位置一致 -->
     <transition name="chat-pop">
-      <div v-if="visible" class="chat-window" :class="`chat-window--${fabSide}`">
+      <div
+        v-if="visible"
+        class="chat-window"
+        :class="`chat-window--${fabSide}`"
+        :style="{ transformOrigin: fabSide === 'left' ? 'bottom left' : 'bottom right' }"
+      >
         <div class="chat-head">
           <div class="chat-head__seal seal seal--sm">茶</div>
           <div class="chat-head__meta">
@@ -46,7 +51,7 @@
           <el-input
             v-model="input"
             placeholder="说点什么，如「推荐一杯不苦的茶」"
-            @keyup.enter="sendMessage"
+            @keyup.enter="onEnterKey"
             :disabled="loading"
             size="default"
           />
@@ -60,9 +65,10 @@
 </template>
 
 <script setup>
-import { ref, nextTick, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import router from '@/router'
 
 // FAB 尺寸与边界（px）
 const FAB_SIZE = 54
@@ -87,6 +93,9 @@ const fabPos = ref({ x: 0, y: 0 })
 const fabSide = ref('right')
 const dragging = ref(false)
 const dragState = ref(null)   // { startX, startY, originX, originY, pointerId, moved }
+
+let abortCtrl = null          // 当前 SSE 请求的 AbortController，组件卸载时中止
+let scrollScheduled = false   // scrollToBottom 的 rAF 合并标记
 
 const fabStyle = computed(() => ({
   left: `${fabPos.value.x}px`,
@@ -132,7 +141,10 @@ function loadPos() {
     if (!raw) return false
     const { side, y } = JSON.parse(raw)
     const resolved = side === 'left' ? 'left' : 'right'
-    fabPos.value = clampPos(edgeX(resolved), y)
+    // 校验 y 为有限数值，避免旧格式/被篡改导致 NaN 定位
+    const yNum = Number(y)
+    if (!Number.isFinite(yNum)) return false
+    fabPos.value = clampPos(edgeX(resolved), yNum)
     fabSide.value = resolved
     return true
   } catch {
@@ -207,30 +219,33 @@ function onResize() {
   fabPos.value = { x: edgeX(fabSide.value), y: fabPos.value.y }
 }
 
+// 在 setup 同步初始化位置，首帧即位于正确位，避免从 (0,0) 滑入
+if (!loadPos()) {
+  fabPos.value = defaultPosition()
+  fabSide.value = 'right'
+}
+
 onMounted(() => {
-  if (!loadPos()) {
-    fabPos.value = defaultPosition()
-    fabSide.value = 'right'
-  }
   window.addEventListener('resize', onResize)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
+  abortCtrl?.abort()   // 组件卸载（如登出）时中止在途的流式请求
 })
 
 async function sendMessage() {
   const text = input.value.trim()
   if (!text || loading.value) return
 
-  // 历史多轮上下文：已有消息转为 user/assistant，截断最近 20 条（与后端 MAX_HISTORY 对齐）
+  // 历史多轮上下文：已有消息转为 user/assistant；排除占位/错误气泡，避免污染上下文
   const history = messages.value
-    .filter((m) => m.content && m.content.trim())
+    .filter((m) => m.content && m.content.trim() && !m.placeholder)
     .map((m) => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.content,
     }))
-    .slice(-20)
+    .slice(-10)
 
   messages.value.push({ role: 'user', content: text })
   input.value = ''
@@ -238,6 +253,7 @@ async function sendMessage() {
   thinking.value = true
   scrollToBottom()
 
+  abortCtrl = new AbortController()
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}api/ai/chat`, {
       method: 'POST',
@@ -246,57 +262,80 @@ async function sendMessage() {
         'Authorization': `Bearer ${userStore.token}`,
       },
       body: JSON.stringify({ message: text, history }),
+      signal: abortCtrl.signal,
     })
+
+    // 鉴权失败等：与 axios 拦截器一致——登出并跳登录，而非静默"小智暂歇"
+    if (!response.ok) {
+      if (response.status === 401) {
+        userStore.logout()
+        router.push('/login')
+      }
+      throw new Error(`AI 服务返回 ${response.status}`)
+    }
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     let aiContent = ''
     let aiMsg = null
+    let buffer = ''   // 跨 chunk 的不完整行缓冲，避免 token 被切断丢失
+
+    const processLine = (line) => {
+      if (!line.startsWith('data:')) return
+      const data = line.slice(5).trim()
+      if (!data || data === '[DONE]') return
+      // 首个 token 到达：插入 AI 气泡，并停止「烹茶中…」
+      if (!aiMsg) {
+        aiMsg = { role: 'ai', content: '' }
+        messages.value.push(aiMsg)
+        thinking.value = false
+      }
+      aiContent += data
+      aiMsg.content = aiContent
+      scrollToBottom()
+    }
 
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
-
-      const chunk = decoder.decode(value, { stream: true })
-      const lines = chunk.split('\n')
-
-      for (const line of lines) {
-        if (line.startsWith('data:')) {
-          const data = line.slice(5).trim()
-          if (data === '[DONE]') continue
-          if (!data) continue
-          // 首个 token 到达：插入 AI 气泡，并停止「烹茶中…」
-          if (!aiMsg) {
-            aiMsg = { role: 'ai', content: '' }
-            messages.value.push(aiMsg)
-            thinking.value = false
-          }
-          aiContent += data
-          aiMsg.content = aiContent
-          scrollToBottom()
-        }
-      }
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop()   // 末段可能不完整（无换行结尾），留到下次拼接
+      for (const line of lines) processLine(line)
     }
+    if (buffer) processLine(buffer)   // flush 流末可能残留的尾行
 
-    // 如果没有收到任何内容，显示提示
+    // 如果没有收到任何内容，显示提示（标记占位，不计入下一轮上下文）
     if (!aiContent) {
-      messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来' })
+      messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来', placeholder: true })
     }
   } catch (e) {
-    // 只有当前消息为空时才显示错误
+    if (e?.name === 'AbortError') return   // 主动中止（卸载），不计为错误
+    // 只有当前消息为空时才显示错误（标记占位）
     const lastMsg = messages.value[messages.value.length - 1]
     if (!lastMsg || lastMsg.role !== 'ai' || !lastMsg.content) {
-      messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来' })
+      messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来', placeholder: true })
     }
   } finally {
     loading.value = false
     thinking.value = false
+    abortCtrl = null
     scrollToBottom()
   }
 }
 
+function onEnterKey(e) {
+  // 输入法组合中（如拼音选词的 Enter）不触发发送
+  if (e && e.isComposing) return
+  sendMessage()
+}
+
+// 流式期间每 token 都会调用，用 rAF 合并到同一帧，避免每 token 一次重排
 function scrollToBottom() {
-  nextTick(() => {
+  if (scrollScheduled) return
+  scrollScheduled = true
+  requestAnimationFrame(() => {
+    scrollScheduled = false
     if (bodyRef.value) bodyRef.value.scrollTop = bodyRef.value.scrollHeight
   })
 }

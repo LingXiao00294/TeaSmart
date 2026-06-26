@@ -29,7 +29,7 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
     private static final MediaType JSON_MEDIA = MediaType.get("application/json; charset=utf-8");
     /** 多轮对话最多携带的历史消息条数，超出按最近截断，避免 token 超限 */
-    private static final int MAX_HISTORY = 20;
+    private static final int MAX_HISTORY = 10;
 
     private final AiConfig aiConfig;
     private final ProductMapper productMapper;
@@ -112,62 +112,76 @@ public class AiService {
             return emitter;
         }
 
+        // 在请求线程内同步构建请求并创建 Call，便于客户端断开时取消上游连接
+        final Call call;
+        try {
+            String knowledge = knowledgeService.buildKnowledgeContext();
+            String chatSystemPrompt = "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。" + knowledge;
+
+            List<Map<String, String>> messages = new ArrayList<>();
+            messages.add(Map.of("role", "system", "content", chatSystemPrompt));
+            // 追加历史多轮：仅接受 user/assistant，过滤空内容与 null 元素；按最近 MAX_HISTORY 条截断
+            if (history != null) {
+                int from = Math.max(0, history.size() - MAX_HISTORY);
+                for (int i = from; i < history.size(); i++) {
+                    ChatRequest.ChatMessage m = history.get(i);
+                    if (m == null) continue;
+                    String role = m.getRole();
+                    String content = m.getContent();
+                    if (content == null || content.isBlank()) continue;
+                    if (!"user".equals(role) && !"assistant".equals(role)) continue;
+                    messages.add(Map.of("role", role, "content", content));
+                }
+            }
+            messages.add(Map.of("role", "user", "content", message));
+
+            Map<String, Object> bodyMap = new HashMap<>();
+            bodyMap.put("model", aiConfig.getModel());
+            bodyMap.put("max_tokens", 2000);
+            bodyMap.put("stream", true);
+            bodyMap.put("messages", messages);
+
+            Request request = new Request.Builder()
+                    .url(aiConfig.getBaseUrl() + "/chat/completions")
+                    .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
+                    .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
+                    .build();
+            call = httpClient.newCall(request);
+        } catch (Exception e) {
+            log.warn("构建AI聊天请求失败: {}", e.getMessage());
+            sendSseAndComplete(emitter, "AI 服务暂时不可用。");
+            return emitter;
+        }
+
+        // 客户端断开/超时/出错时取消上游请求，避免线程空转与 token 浪费
+        emitter.onCompletion(call::cancel);
+        emitter.onTimeout(call::cancel);
+        emitter.onError(e -> call.cancel());
+
         new Thread(() -> {
             boolean dataSent = false;
-            try {
-                String knowledge = knowledgeService.buildKnowledgeContext();
-                String chatSystemPrompt = "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。" + knowledge;
-
-                Map<String, Object> bodyMap = new HashMap<>();
-                bodyMap.put("model", aiConfig.getModel());
-                bodyMap.put("max_tokens", 2000);
-                bodyMap.put("stream", true);
-                List<Map<String, String>> messages = new ArrayList<>();
-                messages.add(Map.of("role", "system", "content", chatSystemPrompt));
-                // 追加历史多轮：仅接受 user/assistant，过滤空内容；按最近 MAX_HISTORY 条截断
-                if (history != null) {
-                    int from = Math.max(0, history.size() - MAX_HISTORY);
-                    for (int i = from; i < history.size(); i++) {
-                        ChatRequest.ChatMessage m = history.get(i);
-                        String role = m.getRole();
-                        String content = m.getContent();
-                        if (content == null || content.isBlank()) continue;
-                        if (!"user".equals(role) && !"assistant".equals(role)) continue;
-                        messages.add(Map.of("role", role, "content", content));
-                    }
+            try (Response response = call.execute()) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    sendSseAndComplete(emitter, "AI 服务返回错误: " + response.code());
+                    return;
                 }
-                messages.add(Map.of("role", "user", "content", message));
-                bodyMap.put("messages", messages);
 
-                Request request = new Request.Builder()
-                        .url(aiConfig.getBaseUrl() + "/chat/completions")
-                        .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
-                        .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
-                        .build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    if (!response.isSuccessful() || response.body() == null) {
-                        sendSseAndComplete(emitter, "AI 服务返回错误: " + response.code());
-                        return;
-                    }
-
-                    try (var reader = new BufferedReader(
-                            new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8))) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            if (line.startsWith("data: ")) {
-                                String data = line.substring(6).trim();
-                                if ("[DONE]".equals(data)) break;
-                                try {
-                                    JsonNode root = objectMapper.readTree(data);
-                                    String content = root.path("choices").path(0)
-                                            .path("delta").path("content").asText("");
-                                    if (!content.isEmpty()) {
-                                        emitter.send(SseEmitter.event().data(content));
-                                        dataSent = true;
-                                    }
-                                } catch (Exception ignored) {
+                try (var reader = new BufferedReader(
+                        new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("data: ")) {
+                            String data = line.substring(6).trim();
+                            if ("[DONE]".equals(data)) break;
+                            try {
+                                JsonNode root = objectMapper.readTree(data);
+                                String content = root.path("choices").path(0)
+                                        .path("delta").path("content").asText("");
+                                if (!content.isEmpty()) {
+                                    emitter.send(SseEmitter.event().data(content));
+                                    dataSent = true;
                                 }
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -188,7 +202,7 @@ public class AiService {
                     try { emitter.complete(); } catch (Exception ignored) {}
                 }
             }
-        }).start();
+        }, "ai-chat-stream").start();
 
         return emitter;
     }

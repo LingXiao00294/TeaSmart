@@ -228,6 +228,7 @@ async function handleOrder() {
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   background: var(--tea-ink);
   color: var(--tea-paper);
+  box-shadow: 0 -6px 20px rgba(24, 40, 25, 0.2); /* 降级：不支持 color-mix 的浏览器 */
   box-shadow: 0 -6px 20px color-mix(in srgb, var(--tea-ink-900) 20%, transparent);
 }
 .cart__bar-total {

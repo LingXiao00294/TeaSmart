@@ -88,3 +88,10 @@ docker compose up --build          # 起 postgres + backend + frontend(nginx:80)
 - 提交信息沿用 Conventional Commits 中文风格（如 `feat(frontend): …`、`fix(backend): …`、`build(docker): …`），见 git log。
 - 前端别名 `@` → `frontend/src`。
 - 后端默认开启 MyBatis-Plus SQL 日志到 stdout；本地排查 SQL 时直接看控制台。
+
+### Git 工作流
+
+- **禁止直接向 `main` 推送或合并**——所有改动必须通过 GitHub PR 合入。
+- 开发在独立分支进行（命名如 `feat/xxx`、`fix/xxx`），完成后推送分支并创建 PR。
+- PR 合并方式**只允许 Squash and merge**，禁止普通 merge 和 rebase/merge。
+- 禁止在 main 上使用 `git reset`、`git push --force` 等改写历史的操作。

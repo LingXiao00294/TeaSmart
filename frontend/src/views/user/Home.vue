@@ -20,7 +20,12 @@
 
     <!-- 轮播图 -->
     <section v-if="banners.length" class="block">
-      <el-carousel height="150px" class="banner" indicator-position="none" arrow="never">
+      <el-carousel
+        height="150px"
+        class="banner"
+        indicator-position="none"
+        :arrow="banners.length > 1 ? 'always' : 'never'"
+      >
         <el-carousel-item v-for="b in banners" :key="b.id">
           <div class="banner__item" :style="{ backgroundImage: `url(${b.image})` }" @click="goBanner(b.link)">
             <span v-if="b.title" class="banner__cap">{{ b.title }}</span>
@@ -220,6 +225,24 @@ function goBanner(link) {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow-card);
+}
+.banner :deep(.el-carousel__arrow) {
+  width: 30px;
+  height: 30px;
+  background-color: rgba(24, 40, 25, 0.42);
+  color: #f5efe0;
+  border: 1px solid rgba(245, 239, 224, 0.25);
+  backdrop-filter: blur(4px);
+  transition: background-color 0.2s, opacity 0.2s;
+}
+.banner :deep(.el-carousel__arrow:hover) {
+  background-color: rgba(24, 40, 25, 0.62);
+}
+.banner :deep(.el-carousel__arrow--left) {
+  left: 8px;
+}
+.banner :deep(.el-carousel__arrow--right) {
+  right: 8px;
 }
 .banner__item {
   height: 100%;

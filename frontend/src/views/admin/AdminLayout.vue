@@ -4,7 +4,7 @@
       <div class="logo">
         <div class="seal seal--md logo__seal">掌</div>
         <div class="logo__text">
-          <span class="logo__cn font-heading">茶智</span>
+          <span class="logo__cn font-heading">茶小智</span>
           <span class="logo__en font-display">Admin</span>
         </div>
       </div>

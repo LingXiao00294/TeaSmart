@@ -42,7 +42,7 @@ request.interceptors.response.use(
     } else if (error.message && error.message !== 'Network Error') {
       message = error.message
     }
-    return Promise.reject(new Error(message))
+    return Promise.reject(Object.assign(error, { message }))
   }
 )
 

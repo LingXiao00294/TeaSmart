@@ -33,7 +33,16 @@ request.interceptors.response.use(
   },
   (error) => {
     if (error.response?.status === 401) handleUnauthorized()
-    return Promise.reject(error)
+    const data = error.response?.data
+    let message = '请求失败'
+    if (typeof data?.message === 'string' && data.message) {
+      message = data.message
+    } else if (error.response?.status === 413) {
+      message = '文件过大，请压缩后重试（最大 5MB）'
+    } else if (error.message && error.message !== 'Network Error') {
+      message = error.message
+    }
+    return Promise.reject(new Error(message))
   }
 )
 

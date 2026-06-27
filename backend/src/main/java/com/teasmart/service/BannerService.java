@@ -22,6 +22,9 @@ import java.util.UUID;
 @Service
 public class BannerService {
 
+    public static final long MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+    private static final List<String> ALLOWED_EXTENSIONS = List.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
+
     private final BannerMapper bannerMapper;
 
     @Value("${upload.dir:uploads}")
@@ -91,12 +94,16 @@ public class BannerService {
             throw BusinessException.badRequest("文件名无效");
         }
 
-        String ext = originalName.substring(originalName.lastIndexOf('.')).toLowerCase();
-        if (!List.of(".jpg", ".jpeg", ".png", ".gif", ".webp").contains(ext)) {
+        int dot = originalName.lastIndexOf('.');
+        if (dot < 0) {
+            throw BusinessException.badRequest("仅支持 jpg/png/gif/webp 格式");
+        }
+        String ext = originalName.substring(dot).toLowerCase();
+        if (!ALLOWED_EXTENSIONS.contains(ext)) {
             throw BusinessException.badRequest("仅支持 jpg/png/gif/webp 格式");
         }
 
-        if (file.getSize() > 5 * 1024 * 1024) {
+        if (file.getSize() > MAX_UPLOAD_BYTES) {
             throw BusinessException.badRequest("文件大小不能超过5MB");
         }
 

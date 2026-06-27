@@ -7,6 +7,13 @@ const request = axios.create({
   timeout: 30000,
 })
 
+// 401 统一处理：登出并跳登录（axios 响应拦截器与 fetch 流式路径共用，避免逻辑分叉）
+export function handleUnauthorized() {
+  const userStore = useUserStore()
+  userStore.logout()
+  router.push('/login')
+}
+
 request.interceptors.request.use((config) => {
   const userStore = useUserStore()
   if (userStore.token) {
@@ -19,21 +26,13 @@ request.interceptors.response.use(
   (response) => {
     const res = response.data
     if (res.code !== 200) {
-      if (res.code === 401) {
-        const userStore = useUserStore()
-        userStore.logout()
-        router.push('/login')
-      }
+      if (res.code === 401) handleUnauthorized()
       return Promise.reject(new Error(res.message || '请求失败'))
     }
     return res
   },
   (error) => {
-    if (error.response?.status === 401) {
-      const userStore = useUserStore()
-      userStore.logout()
-      router.push('/login')
-    }
+    if (error.response?.status === 401) handleUnauthorized()
     return Promise.reject(error)
   }
 )

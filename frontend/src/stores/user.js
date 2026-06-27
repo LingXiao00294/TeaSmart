@@ -12,6 +12,11 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('userInfo', JSON.stringify(data.user))
   }
 
+  function setUserInfo(info) {
+    userInfo.value = info
+    localStorage.setItem('userInfo', JSON.stringify(info))
+  }
+
   function logout() {
     token.value = ''
     userInfo.value = null
@@ -21,5 +26,5 @@ export const useUserStore = defineStore('user', () => {
 
   const isAdmin = () => userInfo.value?.role === 'ADMIN'
 
-  return { token, userInfo, setLogin, logout, isAdmin }
+  return { token, userInfo, setLogin, setUserInfo, logout, isAdmin }
 })

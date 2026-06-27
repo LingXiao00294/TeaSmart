@@ -3,8 +3,10 @@ package com.teasmart.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.teasmart.common.BusinessException;
 import com.teasmart.common.JwtUtil;
+import com.teasmart.dto.ChangePasswordRequest;
 import com.teasmart.dto.LoginRequest;
 import com.teasmart.dto.RegisterRequest;
+import com.teasmart.dto.UpdateProfileRequest;
 import com.teasmart.entity.User;
 import com.teasmart.mapper.UserMapper;
 import com.teasmart.vo.LoginVO;
@@ -63,6 +65,31 @@ public class AuthService {
             throw BusinessException.notFound("用户不存在");
         }
         return toVO(user);
+    }
+
+    public UserVO updateProfile(Long userId, UpdateProfileRequest req) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BusinessException.notFound("用户不存在");
+        }
+        user.setPhone(req.getPhone());
+        userMapper.updateById(user);
+        return toVO(user);
+    }
+
+    public void changePassword(Long userId, ChangePasswordRequest req) {
+        if (req.getOldPassword().equals(req.getNewPassword())) {
+            throw BusinessException.badRequest("新密码不能与原密码相同");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BusinessException.notFound("用户不存在");
+        }
+        if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
+            throw BusinessException.badRequest("原密码不正确");
+        }
+        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
+        userMapper.updateById(user);
     }
 
     private UserVO toVO(User user) {

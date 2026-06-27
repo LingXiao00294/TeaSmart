@@ -112,76 +112,77 @@ public class AiService {
             return emitter;
         }
 
-        // 在请求线程内同步构建请求并创建 Call，便于客户端断开时取消上游连接
-        final Call call;
-        try {
-            String knowledge = knowledgeService.buildKnowledgeContext();
-            String chatSystemPrompt = "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。" + knowledge;
-
-            List<Map<String, String>> messages = new ArrayList<>();
-            messages.add(Map.of("role", "system", "content", chatSystemPrompt));
-            // 追加历史多轮：仅接受 user/assistant，过滤空内容与 null 元素；按最近 MAX_HISTORY 条截断
-            if (history != null) {
-                int from = Math.max(0, history.size() - MAX_HISTORY);
-                for (int i = from; i < history.size(); i++) {
-                    ChatRequest.ChatMessage m = history.get(i);
-                    if (m == null) continue;
-                    String role = m.getRole();
-                    String content = m.getContent();
-                    if (content == null || content.isBlank()) continue;
-                    if (!"user".equals(role) && !"assistant".equals(role)) continue;
-                    messages.add(Map.of("role", role, "content", content));
-                }
-            }
-            messages.add(Map.of("role", "user", "content", message));
-
-            Map<String, Object> bodyMap = new HashMap<>();
-            bodyMap.put("model", aiConfig.getModel());
-            bodyMap.put("max_tokens", 2000);
-            bodyMap.put("stream", true);
-            bodyMap.put("messages", messages);
-
-            Request request = new Request.Builder()
-                    .url(aiConfig.getBaseUrl() + "/chat/completions")
-                    .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
-                    .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
-                    .build();
-            call = httpClient.newCall(request);
-        } catch (Exception e) {
-            log.warn("构建AI聊天请求失败: {}", e.getMessage());
-            sendSseAndComplete(emitter, "AI 服务暂时不可用。");
-            return emitter;
-        }
-
-        // 客户端断开/超时/出错时取消上游请求，避免线程空转与 token 浪费
-        emitter.onCompletion(call::cancel);
-        emitter.onTimeout(call::cancel);
-        emitter.onError(e -> call.cancel());
+        // Call 在工作线程内创建（含知识库 DB 查询），避免阻塞 Servlet 请求线程；
+        // 用 AtomicReference 持有，使 emitter 终止回调可在 Call 就绪后取消上游连接。
+        var callRef = new java.util.concurrent.atomic.AtomicReference<Call>();
+        Runnable cancelCall = () -> {
+            Call c = callRef.get();
+            if (c != null) c.cancel();
+        };
+        emitter.onCompletion(cancelCall);
+        emitter.onTimeout(cancelCall);
+        emitter.onError(e -> cancelCall.run());
 
         new Thread(() -> {
             boolean dataSent = false;
-            try (Response response = call.execute()) {
-                if (!response.isSuccessful() || response.body() == null) {
-                    sendSseAndComplete(emitter, "AI 服务返回错误: " + response.code());
-                    return;
-                }
+            try {
+                String knowledge = knowledgeService.buildKnowledgeContext();
+                String chatSystemPrompt = "你是茶小智饮品店的智能点单助手。你可以推荐饮品、回答关于饮品的问题、介绍口味特点。回答要简洁友好，控制在200字以内。" + knowledge;
 
-                try (var reader = new BufferedReader(
-                        new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (line.startsWith("data: ")) {
-                            String data = line.substring(6).trim();
-                            if ("[DONE]".equals(data)) break;
-                            try {
-                                JsonNode root = objectMapper.readTree(data);
-                                String content = root.path("choices").path(0)
-                                        .path("delta").path("content").asText("");
-                                if (!content.isEmpty()) {
-                                    emitter.send(SseEmitter.event().data(content));
-                                    dataSent = true;
+                List<Map<String, String>> messages = new ArrayList<>();
+                messages.add(Map.of("role", "system", "content", chatSystemPrompt));
+                // 追加历史多轮：仅接受 user/assistant，过滤空内容与 null 元素；按最近 MAX_HISTORY 条截断
+                if (history != null) {
+                    int from = Math.max(0, history.size() - MAX_HISTORY);
+                    for (int i = from; i < history.size(); i++) {
+                        ChatRequest.ChatMessage m = history.get(i);
+                        if (m == null) continue;
+                        String role = m.getRole();
+                        String content = m.getContent();
+                        if (content == null || content.isBlank()) continue;
+                        if (!"user".equals(role) && !"assistant".equals(role)) continue;
+                        messages.add(Map.of("role", role, "content", content));
+                    }
+                }
+                messages.add(Map.of("role", "user", "content", message));
+
+                Map<String, Object> bodyMap = new HashMap<>();
+                bodyMap.put("model", aiConfig.getModel());
+                bodyMap.put("max_tokens", 2000);
+                bodyMap.put("stream", true);
+                bodyMap.put("messages", messages);
+
+                Request request = new Request.Builder()
+                        .url(aiConfig.getBaseUrl() + "/chat/completions")
+                        .addHeader("Authorization", "Bearer " + aiConfig.getApiKey())
+                        .post(RequestBody.create(objectMapper.writeValueAsString(bodyMap), JSON_MEDIA))
+                        .build();
+                Call call = httpClient.newCall(request);
+                callRef.set(call);
+
+                try (Response response = call.execute()) {
+                    if (!response.isSuccessful() || response.body() == null) {
+                        sendSseAndComplete(emitter, "AI 服务返回错误: " + response.code());
+                        return;
+                    }
+
+                    try (var reader = new BufferedReader(
+                            new InputStreamReader(response.body().byteStream(), StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            if (line.startsWith("data: ")) {
+                                String data = line.substring(6).trim();
+                                if ("[DONE]".equals(data)) break;
+                                try {
+                                    JsonNode root = objectMapper.readTree(data);
+                                    String content = root.path("choices").path(0)
+                                            .path("delta").path("content").asText("");
+                                    if (!content.isEmpty()) {
+                                        emitter.send(SseEmitter.event().data(content));
+                                        dataSent = true;
+                                    }
+                                } catch (Exception ignored) {
                                 }
-                            } catch (Exception ignored) {
                             }
                         }
                     }

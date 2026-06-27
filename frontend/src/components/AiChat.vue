@@ -68,7 +68,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
-import router from '@/router'
+import { handleUnauthorized } from '@/utils/request'
 
 // FAB 尺寸与边界（px）
 const FAB_SIZE = 54
@@ -214,9 +214,9 @@ function onClick() {
 }
 
 function onResize() {
-  // 视口变化后重新约束并以当前侧重新贴边，避免越界
-  fabPos.value = clampPos(fabPos.value.x, fabPos.value.y)
-  fabPos.value = { x: edgeX(fabSide.value), y: fabPos.value.y }
+  // 视口变化后约束 y 并以当前侧重新贴边 x（单次写入，避免中间态与无用计算）
+  const clamped = clampPos(fabPos.value.x, fabPos.value.y)
+  fabPos.value = { x: edgeX(fabSide.value), y: clamped.y }
 }
 
 // 在 setup 同步初始化位置，首帧即位于正确位，避免从 (0,0) 滑入
@@ -238,14 +238,14 @@ async function sendMessage() {
   const text = input.value.trim()
   if (!text || loading.value) return
 
-  // 历史多轮上下文：已有消息转为 user/assistant；排除占位/错误气泡，避免污染上下文
+  // 历史多轮上下文：已有消息转为 user/assistant；排除占位/错误气泡，避免污染上下文。
+  // 截断统一由后端 MAX_HISTORY 负责（单一来源），前端发全量历史。
   const history = messages.value
     .filter((m) => m.content && m.content.trim() && !m.placeholder)
     .map((m) => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.content,
     }))
-    .slice(-10)
 
   messages.value.push({ role: 'user', content: text })
   input.value = ''
@@ -265,11 +265,12 @@ async function sendMessage() {
       signal: abortCtrl.signal,
     })
 
-    // 鉴权失败等：与 axios 拦截器一致——登出并跳登录，而非静默"小智暂歇"
+    // 鉴权失败：401 走与 axios 拦截器一致的登出+跳登录后直接返回（finally 复位状态），
+    // 不再 throw 进 catch 推"小智暂歇"，避免登出过程中冒出占位气泡。
     if (!response.ok) {
       if (response.status === 401) {
-        userStore.logout()
-        router.push('/login')
+        handleUnauthorized()
+        return
       }
       throw new Error(`AI 服务返回 ${response.status}`)
     }
@@ -278,11 +279,13 @@ async function sendMessage() {
     const decoder = new TextDecoder()
     let aiContent = ''
     let aiMsg = null
-    let buffer = ''   // 跨 chunk 的不完整行缓冲，避免 token 被切断丢失
+    let buffer = ''            // 跨 chunk 的不完整行
+    const pendingData = []     // 当前 SSE 事件内累积的 data: 行（事件由空行结束，多行用 \n 拼接）
 
-    const processLine = (line) => {
-      if (!line.startsWith('data:')) return
-      const data = line.slice(5).trim()
+    const flushEvent = () => {
+      if (pendingData.length === 0) return
+      const data = pendingData.join('\n')
+      pendingData.length = 0
       if (!data || data === '[DONE]') return
       // 首个 token 到达：插入 AI 气泡，并停止「烹茶中…」
       if (!aiMsg) {
@@ -295,6 +298,17 @@ async function sendMessage() {
       scrollToBottom()
     }
 
+    const processLine = (line) => {
+      if (line === '') { flushEvent(); return }       // 空行 = 事件结束
+      if (line.startsWith('data:')) {
+        // SSE 约定：字段值为冒号后的内容，仅去掉一个前导空格（保留其余空白，避免丢词间空格/换行）
+        let val = line.slice(5)
+        if (val.startsWith(' ')) val = val.slice(1)
+        pendingData.push(val)
+      }
+      // 其它行（event:/id:/retry:/注释）忽略
+    }
+
     while (true) {
       const { done, value } = await reader.read()
       if (done) break
@@ -303,7 +317,8 @@ async function sendMessage() {
       buffer = lines.pop()   // 末段可能不完整（无换行结尾），留到下次拼接
       for (const line of lines) processLine(line)
     }
-    if (buffer) processLine(buffer)   // flush 流末可能残留的尾行
+    if (buffer !== '') processLine(buffer)   // 处理流末残留的尾行
+    flushEvent()                              // flush 未以空行收尾的最后一个事件
 
     // 如果没有收到任何内容，显示提示（标记占位，不计入下一轮上下文）
     if (!aiContent) {

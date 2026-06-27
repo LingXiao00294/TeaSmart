@@ -138,6 +138,8 @@ async function handleSave() {
     ElMessage.success('轮播已保存')
     dialogVisible.value = false
     loadData()
+  } catch (e) {
+    ElMessage.error(e.message || '保存失败，请稍后重试')
   } finally {
     saving.value = false
   }

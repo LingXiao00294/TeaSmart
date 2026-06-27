@@ -92,8 +92,9 @@ public class AuthService {
         if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
             throw BusinessException.badRequest("原密码不正确");
         }
-        user.setPassword(passwordEncoder.encode(req.getNewPassword()));
-        userMapper.updateById(user);
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getPassword, passwordEncoder.encode(req.getNewPassword())));
     }
 
     private UserVO toVO(User user) {

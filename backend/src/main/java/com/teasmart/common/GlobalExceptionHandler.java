@@ -38,7 +38,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public Result<Void> handleMaxUpload(MaxUploadSizeExceededException e) {
-        return Result.fail(400, "文件大小不能超过5MB");
+        long maxBytes = e.getMaxUploadSize();
+        String limit = maxBytes % (1024 * 1024) == 0
+                ? (maxBytes / (1024 * 1024)) + "MB"
+                : (maxBytes / 1024) + "KB";
+        return Result.fail(400, "文件大小不能超过" + limit);
     }
 
     @ExceptionHandler(Exception.class)

@@ -139,6 +139,8 @@ async function savePhone() {
     userStore.setUserInfo(res.data)
     ElMessage.success('手机号已更新')
     phoneDialogVisible.value = false
+  } catch (e) {
+    ElMessage.error(e.message || '更新失败，请稍后重试')
   } finally {
     phoneSaving.value = false
   }
@@ -157,6 +159,8 @@ async function savePassword() {
     passwordDialogVisible.value = false
     userStore.logout()
     router.push('/login')
+  } catch (e) {
+    ElMessage.error(e.message || '修改失败，请稍后重试')
   } finally {
     passwordSaving.value = false
   }

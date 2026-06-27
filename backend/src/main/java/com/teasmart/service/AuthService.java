@@ -1,6 +1,7 @@
 package com.teasmart.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.teasmart.common.BusinessException;
 import com.teasmart.common.JwtUtil;
 import com.teasmart.dto.ChangePasswordRequest;
@@ -72,8 +73,11 @@ public class AuthService {
         if (user == null) {
             throw BusinessException.notFound("用户不存在");
         }
+        // updateById 默认 NOT_NULL 会跳过 null 字段，清空手机号须显式 SET
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getPhone, req.getPhone()));
         user.setPhone(req.getPhone());
-        userMapper.updateById(user);
         return toVO(user);
     }
 

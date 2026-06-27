@@ -1,10 +1,13 @@
 package com.teasmart.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.teasmart.common.BusinessException;
 import com.teasmart.common.JwtUtil;
+import com.teasmart.dto.ChangePasswordRequest;
 import com.teasmart.dto.LoginRequest;
 import com.teasmart.dto.RegisterRequest;
+import com.teasmart.dto.UpdateProfileRequest;
 import com.teasmart.entity.User;
 import com.teasmart.mapper.UserMapper;
 import com.teasmart.vo.LoginVO;
@@ -63,6 +66,35 @@ public class AuthService {
             throw BusinessException.notFound("用户不存在");
         }
         return toVO(user);
+    }
+
+    public UserVO updateProfile(Long userId, UpdateProfileRequest req) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BusinessException.notFound("用户不存在");
+        }
+        // updateById 默认 NOT_NULL 会跳过 null 字段，清空手机号须显式 SET
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getPhone, req.getPhone()));
+        user.setPhone(req.getPhone());
+        return toVO(user);
+    }
+
+    public void changePassword(Long userId, ChangePasswordRequest req) {
+        if (req.getOldPassword().equals(req.getNewPassword())) {
+            throw BusinessException.badRequest("新密码不能与原密码相同");
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw BusinessException.notFound("用户不存在");
+        }
+        if (!passwordEncoder.matches(req.getOldPassword(), user.getPassword())) {
+            throw BusinessException.badRequest("原密码不正确");
+        }
+        userMapper.update(null, new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getPassword, passwordEncoder.encode(req.getNewPassword())));
     }
 
     private UserVO toVO(User user) {

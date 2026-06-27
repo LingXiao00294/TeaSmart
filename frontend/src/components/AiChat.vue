@@ -70,15 +70,27 @@ import { Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { handleUnauthorized } from '@/utils/request'
 
-// FAB 尺寸与边界（px）
+// FAB 尺寸与边界（px）；列宽/边距与 tokens.css --app-col-* 保持一致
 const FAB_SIZE = 54
-const EDGE_MARGIN = 18        // 离左右边缘距离
 const TOP_MARGIN = 12         // 顶部最小距离
 const BOTTOM_MARGIN = 90      // 底部最小距离（避开底部导航栏 + 安全区近似）
 const DRAG_THRESHOLD = 6      // 超过此位移才视为拖动，否则当作点击
 const STORAGE_KEY = 'teasmart:ai-fab-pos'
-const DESKTOP_COL = 600       // 桌面端居中列宽度（与 AppShell 一致）
-const DESKTOP_BREAK = 720
+const DESKTOP_BREAK = 720     // 与 AppShell / AiChat @media 断点同步
+
+// 缓存 CSS 变量值，避免在高频拖拽事件中反复读取 getComputedStyle
+let cachedColWidth = 600
+let cachedEdgeMargin = 18
+
+function readLayoutTokens() {
+  const style = getComputedStyle(document.documentElement)
+  const w = parseFloat(style.getPropertyValue('--app-col-width'))
+  const e = parseFloat(style.getPropertyValue('--app-col-edge'))
+  cachedColWidth = Number.isFinite(w) ? w : 600
+  cachedEdgeMargin = Number.isFinite(e) ? e : 18
+}
+
+readLayoutTokens()
 
 const userStore = useUserStore()
 const visible = ref(false)
@@ -106,12 +118,12 @@ const fabStyle = computed(() => ({
 function edgeX(side) {
   const vw = window.innerWidth
   if (vw >= DESKTOP_BREAK) {
-    const colLeft = (vw - DESKTOP_COL) / 2
+    const colLeft = (vw - cachedColWidth) / 2
     return side === 'left'
-      ? colLeft + EDGE_MARGIN
-      : colLeft + DESKTOP_COL - FAB_SIZE - EDGE_MARGIN
+      ? colLeft + cachedEdgeMargin
+      : colLeft + cachedColWidth - FAB_SIZE - cachedEdgeMargin
   }
-  return side === 'left' ? EDGE_MARGIN : vw - FAB_SIZE - EDGE_MARGIN
+  return side === 'left' ? cachedEdgeMargin : vw - FAB_SIZE - cachedEdgeMargin
 }
 
 function defaultPosition() {
@@ -123,7 +135,7 @@ function clampPos(x, y) {
   const vw = window.innerWidth
   const vh = window.innerHeight
   return {
-    x: Math.min(Math.max(x, EDGE_MARGIN), vw - FAB_SIZE - EDGE_MARGIN),
+    x: Math.min(Math.max(x, cachedEdgeMargin), vw - FAB_SIZE - cachedEdgeMargin),
     y: Math.min(Math.max(y, TOP_MARGIN), vh - FAB_SIZE - BOTTOM_MARGIN),
   }
 }
@@ -214,6 +226,7 @@ function onClick() {
 }
 
 function onResize() {
+  readLayoutTokens()
   // 视口变化后约束 y 并以当前侧重新贴边 x（单次写入，避免中间态与无用计算）
   const clamped = clampPos(fabPos.value.x, fabPos.value.y)
   fabPos.value = { x: edgeX(fabSide.value), y: clamped.y }
@@ -541,14 +554,14 @@ function scrollToBottom() {
   opacity: 0;
 }
 
-/* 桌面端：FAB 与窗口对齐居中 600px 列两侧 */
+/* 桌面端：FAB 与窗口对齐居中列两侧（列宽/边距见 tokens.css --app-col-*） */
 @media (min-width: 720px) {
   .chat-window--right {
-    right: calc(50% - 300px + 18px);
+    right: calc(50% - var(--app-col-width) / 2 + var(--app-col-edge));
     left: auto;
   }
   .chat-window--left {
-    left: calc(50% - 300px + 18px);
+    left: calc(50% - var(--app-col-width) / 2 + var(--app-col-edge));
     right: auto;
   }
 }

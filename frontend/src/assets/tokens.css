@@ -1,5 +1,5 @@
 /* ============================================================
-   茶智 TeaSmart · 新中式茶韵设计令牌
+   茶小智 TeaSmart · 新中式茶韵设计令牌
    - 品牌色 / 文字 / 线 / 圆角 / 阴影 / 字体
    - Element Plus 主题变量覆盖（让 EP 组件自动继承茶色）
    - 装饰工具类：宣纸纹理 / 金线 / 印章
@@ -37,6 +37,10 @@
   --font-display: 'Cormorant Garamond', 'Noto Serif SC', 'Songti SC', serif;
   --font-heading: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
   --font-body: 'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* —— 桌面居中列布局（AppShell / AiChat 共用；断点 720px 见各组件 @media）—— */
+  --app-col-width: 600px;
+  --app-col-edge: 18px;
 
   /* —— Element Plus 主题覆盖 —— */
   /* 主色（墨绿）全阶，供按钮 hover/active、标签、边框使用 */

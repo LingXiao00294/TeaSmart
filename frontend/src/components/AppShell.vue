@@ -41,7 +41,7 @@ import BottomTabBar from './BottomTabBar.vue'
 /* 桌面端：收束为居中 app 列，两侧露出墨绿氛围底 */
 @media (min-width: 720px) {
   .app-shell__stage {
-    width: 600px;
+    width: var(--app-col-width);
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.35);
   }
 }

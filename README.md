@@ -63,6 +63,7 @@ docker compose up --build
 #### 1. 启动 PostgreSQL
 
 ```bash
+cp .env.example .env          # docker compose 读取 DB_PASSWORD 等变量
 docker compose up postgres          # 仅起数据库
 # 或使用本地 PG，库名/用户均为 teasmart
 ```
@@ -79,8 +80,8 @@ mvn spring-boot:run
 
 ```bash
 cd frontend
-npm install
-npm run dev
+bun install
+bun run dev
 # 开发服务器会自动把 /teasmart/api、/teasmart/uploads 代理到 localhost:8080
 ```
 
@@ -111,9 +112,10 @@ npm run dev
 | `AI_API_KEY` | DashScope API Key（留空则 AI 功能降级） | — |
 | `AI_BASE_URL` | AI 接口地址 | `https://dashscope.aliyuncs.com/compatible-mode/v1` |
 | `AI_MODEL` | 模型名 | `qwen-turbo` |
-| `APP_BASE_PATH` | 部署子路径前缀 | `/teasmart` |
 
 > 未配置 `AI_API_KEY` 时：推荐接口返回内置 mock 数据，聊天接口会提示「AI 未配置」，系统其余功能不受影响。
+>
+> 后端还支持 `APP_BASE_PATH` 配置对外 URL 前缀，默认 `/teasmart`；当前 Docker Compose 部署在 `docker-compose.yml` 中固定传入 `/teasmart`，不由 `.env.example` 控制。
 
 ---
 
@@ -184,7 +186,7 @@ TeaSmart/
 
 ## 📡 API 概览
 
-> 所有响应统一为 `Result<T>{ code, message, data }`，`code === 200` 表示成功。除公开接口外均需在请求头携带 `Authorization: Bearer <token>`。
+> 除 `/api/ai/chat` 的 SSE 流式接口外，JSON 响应统一为 `Result<T>{ code, message, data }`，`code === 200` 表示成功。除公开接口外均需在请求头携带 `Authorization: Bearer <token>`。
 
 | 模块 | 前缀 | 主要接口 |
 | --- | --- | --- |
@@ -203,7 +205,7 @@ TeaSmart/
 ## 🤖 AI 能力
 
 - **智能推荐**：基于在售商品菜单，让大模型选出 3 款并给出推荐理由，严格校验返回的 `productId` 合法性。
-- **AI 客服**：`/api/ai/chat` 采用 **SSE 流式**输出，逐 token 推送，体验接近 ChatGPT。
+- **AI 客服**：`/api/ai/chat` 采用 **SSE 流式**输出，逐 token 推送；该接口直接返回事件流，不使用 `Result<T>` 包装。
 - **知识库增强**：管理后台维护的领域语料会作为 system prompt 注入，让 AI 回答更贴合本店商品。
 
 > AI 走 **OkHttp** 直连 DashScope；聊天接口在 Nginx 下已配置 `proxy_buffering off` 以支持流式。
@@ -225,5 +227,5 @@ TeaSmart/
 ## 🧪 开发约定
 
 - 后端测试：`mvn test`，单个测试类 `mvn test -Dtest=BannerServiceTest`
-- 前端构建：`npm run build`（产物输出到 `frontend/dist`）
+- 前端构建：`bun run build`（产物输出到 `frontend/dist`）
 - 提交信息遵循 Conventional Commits（中文描述），如 `feat(backend): …`、`fix(frontend): …`

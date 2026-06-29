@@ -267,6 +267,32 @@ async function sendMessage() {
   scrollToBottom()
 
   abortCtrl = new AbortController()
+  let aiContent = ''
+  let aiMsgIndex = -1
+  let renderedAiContent = ''
+  let renderFrame = 0
+
+  const applyAiContent = () => {
+    renderFrame = 0
+    if (aiMsgIndex < 0 || renderedAiContent === aiContent) return
+    messages.value[aiMsgIndex].content = aiContent
+    renderedAiContent = aiContent
+    scrollToBottom()
+  }
+
+  const scheduleAiRender = () => {
+    if (renderFrame) return
+    renderFrame = requestAnimationFrame(applyAiContent)
+  }
+
+  const flushAiRender = () => {
+    if (renderFrame) {
+      cancelAnimationFrame(renderFrame)
+      renderFrame = 0
+    }
+    applyAiContent()
+  }
+
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}api/ai/chat`, {
       method: 'POST',
@@ -290,8 +316,6 @@ async function sendMessage() {
 
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
-    let aiContent = ''
-    let aiMsg = null
     let buffer = ''            // 跨 chunk 的不完整行
     const pendingData = []     // 当前 SSE 事件内累积的 data: 行（事件由空行结束，多行用 \n 拼接）
 
@@ -301,14 +325,13 @@ async function sendMessage() {
       pendingData.length = 0
       if (!data || data === '[DONE]') return
       // 首个 token 到达：插入 AI 气泡，并停止「烹茶中…」
-      if (!aiMsg) {
-        aiMsg = { role: 'ai', content: '' }
-        messages.value.push(aiMsg)
+      if (aiMsgIndex < 0) {
+        aiMsgIndex = messages.value.length
+        messages.value.push({ role: 'ai', content: '' })
         thinking.value = false
       }
       aiContent += data
-      aiMsg.content = aiContent
-      scrollToBottom()
+      scheduleAiRender()
     }
 
     const processLine = (line) => {
@@ -332,6 +355,7 @@ async function sendMessage() {
     }
     if (buffer !== '') processLine(buffer)   // 处理流末残留的尾行
     flushEvent()                              // flush 未以空行收尾的最后一个事件
+    flushAiRender()                           // 确保结束前渲染最后一批已合并 token
 
     // 如果没有收到任何内容，显示提示（标记占位，不计入下一轮上下文）
     if (!aiContent) {
@@ -339,12 +363,14 @@ async function sendMessage() {
     }
   } catch (e) {
     if (e?.name === 'AbortError') return   // 主动中止（卸载），不计为错误
+    flushAiRender()
     // 只有当前消息为空时才显示错误（标记占位）
     const lastMsg = messages.value[messages.value.length - 1]
     if (!lastMsg || lastMsg.role !== 'ai' || !lastMsg.content) {
       messages.value.push({ role: 'ai', content: '小智暂歇，稍后再来', placeholder: true })
     }
   } finally {
+    flushAiRender()
     loading.value = false
     thinking.value = false
     abortCtrl = null
